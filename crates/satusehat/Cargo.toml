@@ -1,0 +1,25 @@
+[package]
+name = "satusehat"
+version = "0.0.1"
+edition = "2021"
+rust-version = "1.75"
+description = "Indonesian SATUSEHAT national health platform — FHIR R4 profiles, API client, and data models"
+readme = "README.md"
+repository = "https://github.com/Zluidr/hl7-rs"
+license = "Apache-2.0"
+keywords = ["satusehat", "fhir", "indonesia", "healthcare", "kemenkes"]
+categories = ["science", "web-programming::http-client"]
+
+[dependencies]
+serde      = { workspace = true }
+serde_json = { workspace = true }
+fhir-r4    = { workspace = true }
+
+[dependencies.reqwest]
+version  = "0.12"
+features = ["json"]
+optional = true
+
+[features]
+default = []
+client  = ["dep:reqwest"]

@@ -1,0 +1,11 @@
+[package]
+name = "hl7-v2"
+version = "0.0.1"
+edition = "2021"
+rust-version = "1.75"
+description = "Zero-dependency HL7 v2 message parser — bytes to typed AST, no transport, no runtime"
+readme = "README.md"
+repository = "https://github.com/Zluidr/hl7-rs"
+license = "Apache-2.0"
+keywords = ["hl7", "healthcare", "medical", "parser", "interoperability"]
+categories = ["encoding", "parser-implementations", "science"]

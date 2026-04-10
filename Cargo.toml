@@ -1,0 +1,23 @@
+[workspace]
+members = [
+    "crates/hl7-mllp",
+    "crates/hl7-v2",
+    "crates/hl7-mindray",
+    "crates/fhir-r4",
+    "crates/satusehat",
+]
+resolver = "2"
+
+# Shared dependency versions across the workspace
+[workspace.dependencies]
+bytes      = "1"
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio      = { version = "1", features = ["full"] }
+
+# Intra-workspace path references (used during local dev)
+hl7-mllp   = { path = "crates/hl7-mllp",   version = "0.0.1" }
+hl7-v2     = { path = "crates/hl7-v2",     version = "0.0.1" }
+hl7-mindray = { path = "crates/hl7-mindray", version = "0.0.1" }
+fhir-r4    = { path = "crates/fhir-r4",    version = "0.0.1" }
+satusehat  = { path = "crates/satusehat",  version = "0.0.1" }

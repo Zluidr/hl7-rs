@@ -1,0 +1,17 @@
+[package]
+name = "hl7-mllp"
+version = "0.0.1"
+edition = "2021"
+rust-version = "1.75"
+description = "Transport-agnostic MLLP (Minimal Lower Layer Protocol) framing for HL7 v2 messages"
+readme = "README.md"
+repository = "https://github.com/Zluidr/hl7-rs"
+license = "Apache-2.0"
+keywords = ["hl7", "mllp", "healthcare", "medical", "interoperability"]
+categories = ["encoding", "network-programming", "science"]
+
+[dependencies]
+bytes = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
