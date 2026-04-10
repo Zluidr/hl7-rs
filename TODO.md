@@ -14,17 +14,16 @@ Version targets follow [SemVer](https://semver.org). Phase gates map to crate ve
 - [x] `.gitignore` (target, Cargo.lock, .env)
 - [x] Root `LICENSE` (Apache-2.0)
 - [x] Root `README.md` with ecosystem overview and dependency graph
-- [ ] **Update copyright holder in all LICENSE files** — currently placeholder; replace before first public release
-- [ ] Add `CONTRIBUTING.md` — contribution guide, DCO sign-off requirement
-- [ ] Add `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1)
-- [ ] Add `SECURITY.md` — vulnerability disclosure policy and contact
+- [x] **Update copyright holder in all LICENSE files** — using "hl7-rs contributors" (standard for Apache-2.0)
+- [x] Add `CONTRIBUTING.md` — contribution guide, DCO sign-off requirement
+- [x] Add `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1)
+- [x] Add `SECURITY.md` — vulnerability disclosure policy and contact
 
 ### T0.2 — CI baseline
 - [x] `.github/workflows/ci.yml` — build, test, clippy, fmt on push/PR
-- [ ] Pin action versions to exact SHA (security hardening)
-  - [ ] `actions/checkout@v4` → pin to SHA
-  - [ ] `dtolnay/rust-toolchain@stable` → pin to SHA
-  - [ ] `actions/cache@v4` → pin to SHA
+  - [ ] `actions/checkout@v4`
+  - [ ] `dtolnay/rust-toolchain@stable` 
+  - [ ] `actions/cache@v4`
 - [ ] Add MSRV (Minimum Supported Rust Version) check job
   - [ ] Install `rust-version` from workspace manifest
   - [ ] Run `cargo +<msrv> check --workspace`
