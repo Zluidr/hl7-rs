@@ -1,8 +1,8 @@
 //! SATUSEHAT-profile Observation wrapper.
 
-use serde_json::Value;
-use fhir_r4::observation::Observation;
 use crate::{SatuSehatConfig, SatuSehatError};
+use fhir_r4::observation::Observation;
+use serde_json::Value;
 
 /// An Observation wrapped with SATUSEHAT profile requirements.
 ///
@@ -57,8 +57,8 @@ impl SatuSehatObservation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use fhir_r4::observation::{ObservationBuilder, ObservationStatus};
     use crate::{SatuSehatConfig, SatuSehatEnv};
+    use fhir_r4::observation::{ObservationBuilder, ObservationStatus};
 
     #[test]
     fn adds_satusehat_profile() {

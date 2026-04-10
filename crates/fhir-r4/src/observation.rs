@@ -1,7 +1,7 @@
 //! FHIR R4 Observation resource — the primary resource for vital sign data.
 
-use serde::{Deserialize, Serialize};
 use crate::types::{CodeableConcept, Coding, Quantity, Reference};
+use serde::{Deserialize, Serialize};
 
 /// FHIR R4 Observation status codes.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -78,7 +78,7 @@ impl SatuSehatEnv {
     /// Base URL for the FHIR R4 endpoint.
     pub fn fhir_base_url(&self) -> &'static str {
         match self {
-            Self::Sandbox    => "https://api-satusehat-stg.dto.kemkes.go.id/fhir-r4/v1",
+            Self::Sandbox => "https://api-satusehat-stg.dto.kemkes.go.id/fhir-r4/v1",
             Self::Production => "https://api-satusehat.kemkes.go.id/fhir-r4/v1",
         }
     }
@@ -86,7 +86,7 @@ impl SatuSehatEnv {
     /// Auth token endpoint.
     pub fn auth_url(&self) -> &'static str {
         match self {
-            Self::Sandbox    => "https://api-satusehat-stg.dto.kemkes.go.id/oauth2/v1/accesstoken",
+            Self::Sandbox => "https://api-satusehat-stg.dto.kemkes.go.id/oauth2/v1/accesstoken",
             Self::Production => "https://api-satusehat.kemkes.go.id/oauth2/v1/accesstoken",
         }
     }

@@ -204,10 +204,7 @@ impl<'a> Hl7Message<'a> {
         let segments = raw_segments
             .iter()
             .map(|raw_seg| {
-                let mut fields: Vec<&str> = raw_seg.splitn(
-                    usize::MAX,
-                    field_sep_char,
-                ).collect();
+                let mut fields: Vec<&str> = raw_seg.splitn(usize::MAX, field_sep_char).collect();
 
                 let name = fields.remove(0);
                 Segment {
@@ -295,6 +292,9 @@ mod tests {
 
     #[test]
     fn missing_msh() {
-        assert!(matches!(Hl7Message::parse(b"OBX|1|NM|..."), Err(ParseError::MissingMsh)));
+        assert!(matches!(
+            Hl7Message::parse(b"OBX|1|NM|..."),
+            Err(ParseError::MissingMsh)
+        ));
     }
 }

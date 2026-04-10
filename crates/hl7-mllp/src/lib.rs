@@ -34,7 +34,7 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-use bytes::{Bytes, BytesMut, BufMut};
+use bytes::{BufMut, Bytes, BytesMut};
 
 /// MLLP start-of-block character (VT, 0x0B).
 pub const VT: u8 = 0x0B;
@@ -62,7 +62,9 @@ impl std::fmt::Display for MllpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::MissingStartByte => write!(f, "MLLP frame missing VT start byte (0x0B)"),
-            Self::MissingEndSequence => write!(f, "MLLP frame missing FS+CR end sequence (0x1C 0x0D)"),
+            Self::MissingEndSequence => {
+                write!(f, "MLLP frame missing FS+CR end sequence (0x1C 0x0D)")
+            }
             Self::EmptyPayload => write!(f, "MLLP frame contains no HL7 payload"),
             Self::Incomplete => write!(f, "Buffer does not contain a complete MLLP frame"),
         }
@@ -174,7 +176,8 @@ mod tests {
 
     #[test]
     fn roundtrip() {
-        let payload = b"MSH|^~\\&|SendApp|SendFac|RecApp|RecFac|20240101120000||ORU^R01|12345|P|2.3.1";
+        let payload =
+            b"MSH|^~\\&|SendApp|SendFac|RecApp|RecFac|20240101120000||ORU^R01|12345|P|2.3.1";
         let framed = MllpFrame::encode(payload);
         let decoded = MllpFrame::decode(&framed).unwrap();
         assert_eq!(decoded, payload);
