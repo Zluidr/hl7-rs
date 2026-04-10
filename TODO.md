@@ -22,8 +22,8 @@ Version targets follow [SemVer](https://semver.org). Phase gates map to crate ve
 ### T0.2 — CI baseline
 - [x] `.github/workflows/ci.yml` — build, test, clippy, fmt on push/PR
   - [x] `actions/checkout@v4` → pinned to SHA `11bd71901bbe5b1630ceea73d27597364c9af683`
-  - [x] `dtolnay/rust-toolchain@stable` → pinned to SHA `dc6353517c68c2d08c16c9705a94e86057c4399a`
-  - [x] `actions/cache@v4` → pinned to SHA `6849a6489940f00c2f30c0fb92c6274307ccb58a`
+  - [x] `dtolnay/rust-toolchain@stable`
+  - [x] `actions/cache@v4`
 - [x] Add MSRV (Minimum Supported Rust Version) check job
   - [x] Install `rust-version` from workspace manifest
   - [x] Run `cargo +<msrv> check --workspace`

@@ -18,12 +18,12 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@56f9688619a21e792f27263e0a77b245f177d70f  # stable
+        uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
 
       - name: Cache cargo
-        uses: actions/cache@1bd1e32a35bdcfd62c76a540e5850ef5242d00d6  # v4.2.2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
