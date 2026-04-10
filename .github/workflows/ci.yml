@@ -52,7 +52,7 @@ jobs:
       - name: Read MSRV from workspace
         id: read-msrv
         run: |
-          MSRV=$(grep -oP 'rust-version\s*=\s*"\K[0-9.]+' Cargo.toml)
+          MSRV=$(sed -n 's/rust-version *= *"\([0-9.]*\)".*/\1/p' Cargo.toml)
           echo "msrv=$MSRV" >> $GITHUB_OUTPUT
 
       - name: Install MSRV Rust
