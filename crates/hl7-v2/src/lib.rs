@@ -222,7 +222,7 @@ impl<'a> Hl7Message<'a> {
     }
 
     /// Iterate over all segments with the given name (e.g., `"OBX"`).
-    pub fn segments<'b>(&'b self, name: &'b str) -> impl Iterator<Item = &'b Segment<'_>> + 'b {
+    pub fn segments<'b>(&'b self, name: &'b str) -> impl Iterator<Item = &'b Segment<'b>> + 'b {
         self.segments.iter().filter(move |s| s.name == name)
     }
 
