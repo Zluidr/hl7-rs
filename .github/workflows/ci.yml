@@ -56,7 +56,7 @@ jobs:
           echo "msrv=$MSRV" >> $GITHUB_OUTPUT
 
       - name: Install MSRV Rust
-        uses: dtolnay/rust-toolchain@56f9688619a21e792f27263e0a77b245f177d70f  # @${{ steps.read-msrv.outputs.msrv }}
+        uses: dtolnay/rust-toolchain@${{ steps.read-msrv.outputs.msrv }}
         with:
           toolchain: ${{ steps.read-msrv.outputs.msrv }}
 
