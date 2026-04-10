@@ -27,7 +27,7 @@ FHIR R4 resource types and builders — focused on device integration pipelines.
 - [ ] Add `Observation::device` — `Option<Reference>` — link to device resource
 - [ ] Add `Observation::based_on` — `Option<Vec<Reference>>` — ServiceRequest ref
 - [ ] `ObservationBuilder` — validate required fields in `build()` return `Result` instead of panic
-  - [ ] `build() -> Result<Observation, BuildError>` 
+  - [ ] `build() -> Result<Observation, BuildError>`
   - [ ] `build_unchecked() -> Observation` for performance-critical paths
 - [ ] Test: NIBP observation with `components` (sys + dia)
 - [ ] Test: `build()` with missing status returns `Err`

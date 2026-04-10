@@ -76,7 +76,7 @@ use fhir_r4::satusehat::SatuSehatObservation;
 
 ## Status
 
-`0.0.1` — initial placeholder. Active development in progress.  
+`0.0.1` — initial placeholder. Active development in progress.
 
 ## License
 

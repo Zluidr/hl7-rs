@@ -90,7 +90,7 @@ This crate is part of a family of transport-agnostic HL7 and FHIR crates:
 
 ## Status
 
-`0.0.1` — initial placeholder. Active development in progress.  
+`0.0.1` — initial placeholder. Active development in progress.
 
 ## License
 

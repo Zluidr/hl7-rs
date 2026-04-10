@@ -15,8 +15,6 @@ version = 2
 allow = [
     "Apache-2.0",
     "MIT",
-    "Apache-2.0 OR MIT",
-    "MIT OR Apache-2.0",
     "BSD-2-Clause",
     "BSD-3-Clause",
     "ISC",
@@ -25,37 +23,11 @@ allow = [
     "OpenSSL",
 ]
 
-# Explicitly deny copyleft and BUSL licenses
-deny = [
-    "GPL-2.0",
-    "GPL-2.0-or-later",
-    "GPL-3.0",
-    "GPL-3.0-or-later",
-    "AGPL-1.0",
-    "AGPL-3.0",
-    "LGPL-2.0",
-    "LGPL-2.1",
-    "LGPL-3.0",
-    "BUSL-1.1",
-    "CDDL-1.0",
-    "CDDL-1.1",
-    "CPL-1.0",
-    "EPL-1.0",
-    "EPL-2.0",
-    "MPL-1.0",
-    "MPL-1.1",
-    "MPL-2.0",
-]
-
-# The Unlicense and CC0-1.0 are fine for public domain code
-allow-osi-fsf-free = "both"
-copyleft = "deny"
-
 # Exceptions for specific crates if needed
-[[licenses.exceptions]]
-name = "crate_name_if_needed"
-allow = ["LicenseRef-exception"]
-reason = "Commercial license or specific justification"
+# [[licenses.exceptions]]
+# name = "crate_name_if_needed"
+# allow = ["LicenseRef-exception"]
+# reason = "Commercial license or specific justification"
 
 # Bans - duplicate dependency checking
 [bans]
@@ -63,8 +35,8 @@ reason = "Commercial license or specific justification"
 multiple-versions = "warn"
 # Wildcards are fine in workspace root for path dependencies
 wildcards = "allow"
-# Certain crates we want to highlight duplicates for
-highlight = ["serde", "tokio", "reqwest"]
+# Highlight specific crates with duplicates (optional)
+# highlight = "all"
 
 # Skip certain duplicate checks if unavoidable
 skip = []

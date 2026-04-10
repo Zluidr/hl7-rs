@@ -89,7 +89,7 @@ Unknown codes are preserved in `VitalSign::Unknown` rather than silently dropped
 
 ## Status
 
-`0.0.1` — initial placeholder. Active development in progress.  
+`0.0.1` — initial placeholder. Active development in progress.
 
 ## License
 

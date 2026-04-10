@@ -25,7 +25,7 @@ A composable, layered family of crates for healthcare data integration. Each cra
 
 ```
 hl7-mllp        — frame bytes in/out, nothing else
-hl7-v2          — parse bytes → typed AST, nothing else  
+hl7-v2          — parse bytes → typed AST, nothing else
 hl7-mindray     — map Mindray codes → VitalSign enum
 fhir-r4         — FHIR R4 resource structs + builders
 satusehat       — Indonesian profile extensions + API config
