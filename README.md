@@ -31,7 +31,7 @@ fhir-r4         — FHIR R4 resource structs + builders
 satusehat       — Indonesian profile extensions + API config
 ```
 
-No crate knows about ZluidrOS, any async runtime, or any I/O framework. They compose cleanly with whatever stack you bring.
+No crate has opinions on async runtimes, I/O frameworks, or application architecture. They compose cleanly with whatever stack you bring.
 
 ---
 
@@ -122,9 +122,8 @@ cargo publish -p satusehat     # after fhir-r4 indexes (~1 min)
 
 ## Status
 
-`0.0.1` — placeholder release. Active development in progress as part of the [ZluidrOS](https://github.com/Zluidr/ZluidrOS) ecosystem.
+`0.0.1` — placeholder release. Active development in progress.
 
 ## License
 
 Apache-2.0 — see [LICENSE](LICENSE).
-
