@@ -128,4 +128,3 @@ cargo publish -p satusehat     # after fhir-r4 indexes (~1 min)
 
 Apache-2.0 — see [LICENSE](LICENSE).
 
-Maintained by [PT Teknorakit Inovasi Indonesia](https://github.com/Zluidr).

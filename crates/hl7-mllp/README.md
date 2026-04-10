@@ -91,7 +91,6 @@ This crate is part of a family of transport-agnostic HL7 and FHIR crates:
 ## Status
 
 `0.0.1` — initial placeholder. Active development in progress.  
-Maintained by [PT Teknorakit Inovasi Indonesia](https://github.com/Zluidr) as part of the ZluidrOS ecosystem.
 
 ## License
 

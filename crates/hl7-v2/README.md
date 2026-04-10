@@ -70,7 +70,6 @@ let system = obx.field(3).and_then(|f| f.component(3)); // "LN"
 ## Status
 
 `0.0.1` — initial placeholder. Active development in progress.  
-Maintained by [PT Teknorakit Inovasi Indonesia](https://github.com/Zluidr).
 
 ## License
 

@@ -90,7 +90,6 @@ Unknown codes are preserved in `VitalSign::Unknown` rather than silently dropped
 ## Status
 
 `0.0.1` — initial placeholder. Active development in progress.  
-Maintained by [PT Teknorakit Inovasi Indonesia](https://github.com/Zluidr).
 
 ## License
 
