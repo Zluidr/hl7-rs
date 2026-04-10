@@ -29,14 +29,14 @@ Version targets follow [SemVer](https://semver.org). Phase gates map to crate ve
   - [x] Run `cargo +<msrv> check --workspace`
 
 ### T0.3 — Dependency hygiene
-- [ ] Add `cargo-deny` configuration (`deny.toml`)
-  - [ ] License allow-list: `Apache-2.0`, `MIT`, `MIT OR Apache-2.0`
-  - [ ] Reject `GPL`, `AGPL`, `LGPL`, `BUSL`
-  - [ ] Vulnerability advisories: deny all
-  - [ ] Duplicate dependency check: warn
-- [ ] Add `cargo-audit` to CI
-  - [ ] Run `cargo audit` on every push
-  - [ ] Add `audit.toml` for known false-positives
+- [x] Add `cargo-deny` configuration (`deny.toml`)
+  - [x] License allow-list: `Apache-2.0`, `MIT`, `MIT OR Apache-2.0`
+  - [x] Reject `GPL`, `AGPL`, `LGPL`, `BUSL`
+  - [x] Vulnerability advisories: deny all
+  - [x] Duplicate dependency check: warn
+- [x] Add `cargo-audit` to CI
+  - [x] Run `cargo audit` on every push
+  - [x] Add `audit.toml` for known false-positives
 
 ---
 

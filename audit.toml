@@ -1,0 +1,14 @@
+# cargo-audit configuration for hl7-rs
+# https://github.com/rustsec/rustsec/blob/main/cargo-audit/audit.toml.example
+
+[advisories]
+# Ignore specific advisory IDs (e.g., known false positives or non-applicable issues)
+ignore = []
+# Informational advisories only warn, not error
+informational_warnings = ["unmaintained", "yanked", "unsound"]
+severity_threshold = "low"
+
+[output]
+deny = ["warnings", "unsound", "yanked"]
+quiet = false
+show_tree = true
