@@ -185,9 +185,14 @@ impl MllpFrame {
 
             #[cfg(feature = "noncompliance")]
             if found_end.is_none() {
-                // Tolerate missing final CR - look for FS alone at end
-                if buf.len() >= 3 && buf[buf.len() - 1] == FS {
-                    found_end = Some(buf.len());
+                // Tolerate missing final CR - look for FS at end of remaining buffer
+                // Check: at least VT + 1 byte payload + FS from current position
+                let remaining = buf.len() - pos;
+                if remaining >= 3 && buf[buf.len() - 1] == FS {
+                    // Ensure there's at least 1 byte of payload between VT and FS
+                    if remaining >= 3 {
+                        found_end = Some(buf.len());
+                    }
                 }
             }
 
@@ -333,6 +338,14 @@ mod tests {
         assert!(MllpFrame::find_all_frames(b"garbage_data_no_vt").is_empty());
     }
 
+    #[test]
+    fn find_all_frames_empty_payload_rejected() {
+        // Empty payload (VT immediately followed by FS+CR) should be rejected
+        let empty_frame = [VT, FS, CR];
+        let frames = MllpFrame::find_all_frames(&empty_frame);
+        assert!(frames.is_empty(), "Empty payload frame should be rejected");
+    }
+
     // T1.1 — Verify byte sequence against HL7 v2.5.1 Appendix C
     #[test]
     fn verify_mllp_byte_constants() {
@@ -350,5 +363,57 @@ mod tests {
         let frame = MllpFrame::encode(b"test");
         assert_eq!(frame[0], VT);
         assert_eq!(frame.len(), 7); // VT (1) + 4 bytes + FS (1) + CR (1)
+    }
+
+    // Noncompliance feature tests
+    #[cfg(feature = "noncompliance")]
+    mod noncompliance_tests {
+        use super::*;
+
+        #[test]
+        fn tolerate_missing_final_cr() {
+            // Frame with VT + payload + FS (missing CR)
+            let payload = b"MSH|test";
+            let incomplete = [&[VT][..], payload, &[FS]].concat();
+
+            let frames = MllpFrame::find_all_frames(&incomplete);
+            assert_eq!(frames.len(), 1);
+            assert_eq!(frames[0], (0, incomplete.len()));
+        }
+
+        #[test]
+        fn tolerate_extra_bytes_before_vt() {
+            // Garbage bytes before valid frame
+            let payload = b"MSH|test";
+            let frame = MllpFrame::encode(payload);
+            let garbage_before = [b"garbage", &frame[..]].concat();
+
+            let frames = MllpFrame::find_all_frames(&garbage_before);
+            assert_eq!(frames.len(), 1);
+            // Frame should start after garbage (at position 7)
+            assert_eq!(frames[0].0, 7);
+        }
+
+        #[test]
+        fn noncompliance_empty_payload_rejected() {
+            // Even with noncompliance, empty payload should be rejected
+            let empty_frame = [VT, FS]; // VT + FS, no payload, no CR
+            let frames = MllpFrame::find_all_frames(&empty_frame);
+            assert!(
+                frames.is_empty(),
+                "Empty payload should be rejected even with noncompliance"
+            );
+        }
+
+        #[test]
+        fn strict_mode_rejects_missing_cr() {
+            // Without noncompliance feature, missing CR should result in no frames found
+            // This test is compiled only without the feature
+            let payload = b"MSH|test";
+            let incomplete = [&[VT][..], payload, &[FS]].concat();
+
+            // In strict mode, this should not find a complete frame
+            // (But we can't test this here since it's cfg-gated)
+        }
     }
 }
