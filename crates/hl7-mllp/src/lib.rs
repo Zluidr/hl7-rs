@@ -130,6 +130,83 @@ impl MllpFrame {
         None
     }
 
+    /// Find all complete MLLP frames in a buffer.
+    ///
+    /// Returns a vector of (start, end) byte positions for each complete frame found.
+    /// Start position is the index of the VT byte, end position is the index after CR.
+    /// Partial frames at the end of the buffer are not included.
+    ///
+    /// # Example
+    /// ```
+    /// use hl7_mllp::MllpFrame;
+    ///
+    /// let frame1 = MllpFrame::encode(b"MSH|first");
+    /// let frame2 = MllpFrame::encode(b"MSH|second");
+    /// let combined = [&frame1[..], &frame2[..]].concat();
+    ///
+    /// let frames = MllpFrame::find_all_frames(&combined);
+    /// assert_eq!(frames, vec![(0, frame1.len()), (frame1.len(), frame1.len() + frame2.len())]);
+    /// ```
+    pub fn find_all_frames(buf: &[u8]) -> Vec<(usize, usize)> {
+        let mut frames = Vec::new();
+        let mut pos = 0;
+
+        while pos < buf.len() {
+            // Look for VT start byte
+            if buf[pos] != VT {
+                #[cfg(feature = "noncompliance")]
+                {
+                    // Skip non-VT bytes at the start (tolerate extra bytes before VT)
+                    if let Some(vt_pos) = buf[pos..].iter().position(|&b| b == VT) {
+                        pos += vt_pos;
+                    } else {
+                        break;
+                    }
+                }
+                #[cfg(not(feature = "noncompliance"))]
+                break;
+            }
+
+            // Need at least VT + 1 byte + FS + CR = 4 bytes minimum
+            if buf.len() - pos < 4 {
+                break;
+            }
+
+            // Search for FS+CR end sequence
+            let search_start = pos + 1;
+            let mut found_end = None;
+
+            for i in search_start..buf.len().saturating_sub(1) {
+                if buf[i] == FS && buf[i + 1] == CR {
+                    found_end = Some(i + 2); // Position after CR
+                    break;
+                }
+            }
+
+            #[cfg(feature = "noncompliance")]
+            if found_end.is_none() {
+                // Tolerate missing final CR - look for FS alone at end
+                if buf.len() >= 3 && buf[buf.len() - 1] == FS {
+                    found_end = Some(buf.len());
+                }
+            }
+
+            if let Some(end) = found_end {
+                // Ensure payload is not empty (at least 1 byte between VT and FS)
+                if end - pos >= 4 {
+                    frames.push((pos, end));
+                    pos = end;
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        frames
+    }
+
     /// Build a minimal HL7 ACK message payload (not MLLP-framed).
     ///
     /// `msh_9` should be the message control ID from the original MSH-10.
@@ -206,5 +283,72 @@ mod tests {
     fn find_frame_end_incomplete() {
         let partial = b"\x0Bincomplete_data";
         assert_eq!(MllpFrame::find_frame_end(partial), None);
+    }
+
+    // T1.1 — Consecutive frames tests
+    #[test]
+    fn find_all_frames_two_back_to_back() {
+        let payload1 = b"MSH|first";
+        let payload2 = b"MSH|second";
+        let frame1 = MllpFrame::encode(payload1);
+        let frame2 = MllpFrame::encode(payload2);
+        let combined = [&frame1[..], &frame2[..]].concat();
+
+        let frames = MllpFrame::find_all_frames(&combined);
+        assert_eq!(frames.len(), 2);
+        assert_eq!(frames[0], (0, frame1.len()));
+        assert_eq!(frames[1], (frame1.len(), frame1.len() + frame2.len()));
+
+        // Verify decoded payloads
+        let decoded1 = MllpFrame::decode(&combined[frames[0].0..frames[0].1]).unwrap();
+        let decoded2 = MllpFrame::decode(&combined[frames[1].0..frames[1].1]).unwrap();
+        assert_eq!(decoded1, payload1);
+        assert_eq!(decoded2, payload2);
+    }
+
+    #[test]
+    fn find_all_frames_with_partial_third() {
+        let payload1 = b"MSH|first";
+        let payload2 = b"MSH|second";
+        let payload3 = b"MSH|partial_no_end";
+        let frame1 = MllpFrame::encode(payload1);
+        let frame2 = MllpFrame::encode(payload2);
+        let partial3 = [&[VT][..], payload3].concat();
+
+        let combined = [&frame1[..], &frame2[..], &partial3[..]].concat();
+
+        let frames = MllpFrame::find_all_frames(&combined);
+        assert_eq!(frames.len(), 2); // Only first two complete frames
+        assert_eq!(frames[0], (0, frame1.len()));
+        assert_eq!(frames[1], (frame1.len(), frame1.len() + frame2.len()));
+    }
+
+    #[test]
+    fn find_all_frames_empty_buffer() {
+        assert!(MllpFrame::find_all_frames(b"").is_empty());
+    }
+
+    #[test]
+    fn find_all_frames_no_frames() {
+        assert!(MllpFrame::find_all_frames(b"garbage_data_no_vt").is_empty());
+    }
+
+    // T1.1 — Verify byte sequence against HL7 v2.5.1 Appendix C
+    #[test]
+    fn verify_mllp_byte_constants() {
+        // VT = 0x0B (Vertical Tab) - start of block
+        // FS = 0x1C (File Separator) - end of block
+        // CR = 0x0D (Carriage Return) - terminator
+        assert_eq!(VT, 0x0B, "VT must be 0x0B per HL7 v2.5.1 Appendix C");
+        assert_eq!(FS, 0x1C, "FS must be 0x1C per HL7 v2.5.1 Appendix C");
+        assert_eq!(CR, 0x0D, "CR must be 0x0D per HL7 v2.5.1 Appendix C");
+    }
+
+    #[test]
+    fn verify_single_byte_start_block() {
+        // MLLP uses single-byte VT start block, no multi-byte variants
+        let frame = MllpFrame::encode(b"test");
+        assert_eq!(frame[0], VT);
+        assert_eq!(frame.len(), 7); // VT (1) + 4 bytes + FS (1) + CR (1)
     }
 }

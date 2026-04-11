@@ -20,17 +20,17 @@ Transport-agnostic MLLP framing for HL7 v2 messages.
 ## Phase 1 — Spec-Complete Implementation `[0.1.0]`
 
 ### T1.1 — MLLP specification compliance
-- [ ] Verify byte sequence against HL7 v2.5.1 Appendix C (MLLP spec)
-  - [ ] Confirm VT=0x0B, FS=0x1C, CR=0x0D are correct per spec
-  - [ ] Confirm single-byte start-block only (no multi-byte variants)
-- [ ] Handle consecutive frames in a single buffer
-  - [ ] `find_all_frames(buf: &[u8]) -> Vec<(usize, usize)>` — returns (start, end) pairs
-  - [ ] Test: two back-to-back frames in one buffer
-  - [ ] Test: partial third frame at end of buffer
-- [ ] Handle non-compliant senders (optional feature `noncompliance`)
-  - [ ] Tolerate missing final CR after FS
-  - [ ] Tolerate extra bytes before VT start byte
-  - [ ] Feature-gate: `#[cfg(feature = "noncompliance")]`
+- [x] Verify byte sequence against HL7 v2.5.1 Appendix C (MLLP spec)
+  - [x] Confirm VT=0x0B, FS=0x1C, CR=0x0D are correct per spec
+  - [x] Confirm single-byte start-block only (no multi-byte variants)
+- [x] Handle consecutive frames in a single buffer
+  - [x] `find_all_frames(buf: &[u8]) -> Vec<(usize, usize)>` — returns (start, end) pairs
+  - [x] Test: two back-to-back frames in one buffer
+  - [x] Test: partial third frame at end of buffer
+- [x] Handle non-compliant senders (optional feature `noncompliance`)
+  - [x] Tolerate missing final CR after FS
+  - [x] Tolerate extra bytes before VT start byte
+  - [x] Feature-gate: `#[cfg(feature = "noncompliance")]`
 
 ### T1.2 — ACK generation
 - [ ] Replace `chrono_now_str()` stub with real timestamp

@@ -13,5 +13,9 @@ categories = ["encoding", "network-programming", "science"]
 [dependencies]
 bytes = { workspace = true }
 
+[features]
+default = []
+noncompliance = []
+
 [dev-dependencies]
 tokio = { workspace = true }
