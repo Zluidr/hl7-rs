@@ -275,6 +275,86 @@ fn chrono_now_str() -> String {
     }
 }
 
+/// Stateful streaming frame accumulator for MLLP protocol.
+///
+/// This struct maintains an internal buffer and allows incremental
+/// accumulation of bytes from a stream. Complete frames can be
+/// extracted as they become available.
+///
+/// # Example
+/// ```
+/// use hl7_mllp::MllpFramer;
+///
+/// let mut framer = MllpFramer::new();
+/// framer.push(b"\x0BMSH|test\x1C\x0D");
+///
+/// if let Some(frame) = framer.next_frame() {
+///     // Process complete frame
+///     assert_eq!(frame, b"\x0BMSH|test\x1C\x0D");
+/// }
+/// ```
+#[derive(Debug, Clone)]
+pub struct MllpFramer {
+    buffer: BytesMut,
+}
+
+impl MllpFramer {
+    /// Create a new empty framer.
+    pub fn new() -> Self {
+        Self {
+            buffer: BytesMut::new(),
+        }
+    }
+
+    /// Create a new framer with specified capacity.
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            buffer: BytesMut::with_capacity(capacity),
+        }
+    }
+
+    /// Append bytes to the internal buffer.
+    pub fn push(&mut self, bytes: &[u8]) {
+        self.buffer.extend_from_slice(bytes);
+    }
+
+    /// Extract the next complete frame if available.
+    ///
+    /// Returns `Some(Vec<u8>)` with the complete frame (including delimiters),
+    /// or `None` if no complete frame is available yet.
+    ///
+    /// The returned frame is removed from the internal buffer.
+    pub fn next_frame(&mut self) -> Option<Vec<u8>> {
+        // Find the end of the first complete frame
+        let frame_end = MllpFrame::find_frame_end(&self.buffer)?;
+
+        // Extract the frame bytes
+        let frame = self.buffer.split_to(frame_end).to_vec();
+        Some(frame)
+    }
+
+    /// Returns true if the internal buffer is empty.
+    pub fn is_empty(&self) -> bool {
+        self.buffer.is_empty()
+    }
+
+    /// Returns the number of bytes in the internal buffer.
+    pub fn len(&self) -> usize {
+        self.buffer.len()
+    }
+
+    /// Clear the internal buffer.
+    pub fn clear(&mut self) {
+        self.buffer.clear();
+    }
+}
+
+impl Default for MllpFramer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Trait for types that can act as an MLLP byte-stream transport.
 ///
 /// Implement this for TCP streams, serial ports, in-memory buffers,
@@ -578,5 +658,108 @@ mod tests {
         // Verify MSA-2 contains original control ID
         let msa_2 = msa_seg.raw_fields().get(1);
         assert_eq!(msa_2, Some(&"MSG999"));
+    }
+
+    // T1.3 — Streaming support tests
+    #[test]
+    fn framer_push_single_bytes_and_recover_frame() {
+        let mut framer = MllpFramer::new();
+        let frame = MllpFrame::encode(b"MSH|test");
+
+        // Push bytes one at a time
+        for byte in &frame {
+            assert!(framer.next_frame().is_none());
+            framer.push(&[*byte]);
+        }
+
+        // Now we should have a complete frame
+        let recovered = framer.next_frame().unwrap();
+        assert_eq!(recovered, frame.to_vec());
+
+        // Framer should be empty now
+        assert!(framer.is_empty());
+    }
+
+    #[test]
+    fn framer_push_two_frames_at_once() {
+        let mut framer = MllpFramer::new();
+        let frame1 = MllpFrame::encode(b"MSH|first");
+        let frame2 = MllpFrame::encode(b"MSH|second");
+
+        // Push both frames in one call
+        let combined = [&frame1[..], &frame2[..]].concat();
+        framer.push(&combined);
+
+        // Should recover first frame
+        let recovered1 = framer.next_frame().unwrap();
+        assert_eq!(recovered1, frame1.to_vec());
+
+        // Should recover second frame
+        let recovered2 = framer.next_frame().unwrap();
+        assert_eq!(recovered2, frame2.to_vec());
+
+        // No more frames
+        assert!(framer.next_frame().is_none());
+        assert!(framer.is_empty());
+    }
+
+    #[test]
+    fn framer_is_empty_and_len() {
+        let mut framer = MllpFramer::new();
+        assert!(framer.is_empty());
+        assert_eq!(framer.len(), 0);
+
+        framer.push(b"\x0Btest");
+        assert!(!framer.is_empty());
+        assert_eq!(framer.len(), 5); // VT + "test" = 5 bytes
+
+        framer.clear();
+        assert!(framer.is_empty());
+        assert_eq!(framer.len(), 0);
+    }
+
+    #[test]
+    fn framer_with_capacity() {
+        let framer = MllpFramer::with_capacity(1024);
+        assert!(framer.is_empty());
+    }
+
+    #[test]
+    fn framer_default() {
+        let framer: MllpFramer = Default::default();
+        assert!(framer.is_empty());
+    }
+
+    #[test]
+    fn framer_partial_frame_no_complete() {
+        let mut framer = MllpFramer::new();
+        // Incomplete frame (no FS+CR)
+        framer.push(b"\x0Bpartial_data");
+
+        // Should not return a complete frame
+        assert!(framer.next_frame().is_none());
+        assert!(!framer.is_empty());
+    }
+
+    #[test]
+    fn framer_preserves_remaining_bytes() {
+        let mut framer = MllpFramer::new();
+        let frame1 = MllpFrame::encode(b"MSH|first");
+        let partial = b"\x0BMSH|partial_no_end";
+
+        // Push complete frame + partial frame
+        let combined = [&frame1[..], &partial[..]].concat();
+        framer.push(&combined);
+
+        // Extract complete frame
+        let recovered = framer.next_frame().unwrap();
+        assert_eq!(recovered, frame1.to_vec());
+
+        // Partial frame should remain in buffer
+        assert!(!framer.is_empty());
+        assert_eq!(framer.len(), partial.len());
+
+        // No complete frame yet
+        assert!(framer.next_frame().is_none());
     }
 }

@@ -42,13 +42,13 @@ Transport-agnostic MLLP framing for HL7 v2 messages.
 - [x] Test: round-trip ACK parse (ACK is valid HL7 that `hl7-v2` can parse)
 
 ### T1.3 — Streaming support
-- [ ] `MllpFramer` struct — stateful streaming frame accumulator
-  - [ ] `fn push(&mut self, bytes: &[u8])` — append bytes to internal buffer
-  - [ ] `fn next_frame(&mut self) -> Option<Vec<u8>>` — pop next complete frame
-  - [ ] `fn is_empty(&self) -> bool`
-  - [ ] Internal buffer: `BytesMut` (already a dep)
-- [ ] Test: push bytes in 1-byte increments, recover complete frame
-- [ ] Test: push two frames in one call, recover both
+- [x] `MllpFramer` struct — stateful streaming frame accumulator
+  - [x] `fn push(&mut self, bytes: &[u8])` — append bytes to internal buffer
+  - [x] `fn next_frame(&mut self) -> Option<Vec<u8>>` — pop next complete frame
+  - [x] `fn is_empty(&self) -> bool`
+  - [x] Internal buffer: `BytesMut` (already a dep)
+- [x] Test: push bytes in 1-byte increments, recover complete frame
+- [x] Test: push two frames in one call, recover both
 
 ### T1.4 — Error improvements
 - [ ] Add `MllpError::InvalidFrame { reason: String }` for future use
