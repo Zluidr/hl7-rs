@@ -64,11 +64,11 @@ Transport-agnostic MLLP framing for HL7 v2 messages.
 - [x] Add `examples/tcp_listener.rs` — minimal blocking TCP MLLP listener
 
 ### T1.6 — Tests
-- [ ] Test: `encode` then `decode` round-trip with Unicode payload
-- [ ] Test: `decode` on minimum-length valid frame (1-byte payload)
-- [ ] Test: `find_frame_end` with buffer containing exactly one frame
-- [ ] Test: `find_frame_end` with empty buffer
-- [ ] Test: `MllpFramer` push/pop streaming
+- [x] Test: `encode` then `decode` round-trip with Unicode payload
+- [x] Test: `decode` on minimum-length valid frame (1-byte payload)
+- [x] Test: `find_frame_end` with buffer containing exactly one frame
+- [x] Test: `find_frame_end` with empty buffer
+- [x] Test: `MllpFramer` push/pop streaming
 
 ---
 

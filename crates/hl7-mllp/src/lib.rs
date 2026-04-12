@@ -1008,4 +1008,68 @@ mod tests {
         // No complete frame yet
         assert!(framer.next_frame().is_none());
     }
+
+    // T1.6 — Additional tests
+    #[test]
+    fn encode_decode_roundtrip_unicode() {
+        // Test with Unicode payload (UTF-8 encoded)
+        let unicode_payload = "MSH|^~\\&|Test|Facility|20240101120000||ORU^R01|12345|P|2.5\rPID|1||P001||Doe^John^José||19800101|M".as_bytes();
+        let framed = MllpFrame::encode(unicode_payload);
+        let decoded = MllpFrame::decode(&framed).unwrap();
+        assert_eq!(decoded, unicode_payload);
+    }
+
+    #[test]
+    fn decode_minimum_length_valid_frame() {
+        // Minimum valid frame: VT + 1 byte payload + FS + CR = 4 bytes
+        let min_frame = [VT, b'X', FS, CR];
+        let decoded = MllpFrame::decode(&min_frame).unwrap();
+        assert_eq!(decoded, b"X");
+    }
+
+    #[test]
+    fn find_frame_end_exactly_one_frame() {
+        // Buffer containing exactly one complete frame (no trailing bytes)
+        let payload = b"MSH|exact";
+        let frame = MllpFrame::encode(payload);
+
+        let end = MllpFrame::find_frame_end(&frame);
+        assert_eq!(end, Some(frame.len()));
+    }
+
+    #[test]
+    fn find_frame_end_empty_buffer() {
+        // Empty buffer should return None
+        assert_eq!(MllpFrame::find_frame_end(b""), None);
+    }
+
+    #[test]
+    fn find_frame_end_no_vt() {
+        // Buffer without VT start byte should return None
+        assert_eq!(MllpFrame::find_frame_end(b"no_vt_here"), None);
+    }
+
+    #[test]
+    fn framer_push_pop_streaming() {
+        // Test push/pop streaming pattern
+        let mut framer = MllpFramer::new();
+        let frames = vec![
+            MllpFrame::encode(b"MSH|msg1"),
+            MllpFrame::encode(b"MSH|msg2"),
+            MllpFrame::encode(b"MSH|msg3"),
+        ];
+
+        // Push all frames at once
+        let combined: Vec<u8> = frames.iter().flat_map(|f| f.to_vec()).collect();
+        framer.push(&combined);
+
+        // Pop frames one by one
+        for (i, expected) in frames.iter().enumerate() {
+            let actual = framer.next_frame().unwrap();
+            assert_eq!(actual, expected.to_vec(), "Frame {} mismatch", i);
+        }
+
+        // No more frames
+        assert!(framer.next_frame().is_none());
+    }
 }
