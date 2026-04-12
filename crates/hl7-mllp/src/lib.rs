@@ -216,19 +216,19 @@ impl MllpFrame {
     ///
     /// `message_control_id` should be the message control ID from the original MSH-10.
     ///
-    /// # Errors
-    /// Returns `None` if `message_control_id` is empty.
+    /// # Returns
+    /// Returns `Some(String)` with the ACK payload, or `None` if `message_control_id` is empty.
     pub fn build_ack(message_control_id: &str, accepting: bool) -> Option<String> {
         if message_control_id.is_empty() {
             return None;
         }
         let code = if accepting { "AA" } else { "AE" };
+        let timestamp = chrono_now_str();
+        // Generate a unique ACK control ID (ACK + timestamp + original ID)
+        let ack_control_id = format!("ACK{}{}", &timestamp, message_control_id);
         Some(format!(
             "MSH|^~\\&|||||{}||ACK|{}|P|2.3.1\rMSA|{}|{}",
-            chrono_now_str(),
-            message_control_id,
-            code,
-            message_control_id,
+            timestamp, ack_control_id, code, message_control_id,
         ))
     }
 
@@ -238,8 +238,8 @@ impl MllpFrame {
     /// `error_code` should be an HL7 error code (e.g., "101", "102").
     /// `error_text` should be a human-readable error description.
     ///
-    /// # Errors
-    /// Returns `None` if `message_control_id` is empty.
+    /// # Returns
+    /// Returns `Some(String)` with the NACK payload, or `None` if `message_control_id` is empty.
     pub fn build_nack(
         message_control_id: &str,
         error_code: &str,
@@ -248,13 +248,16 @@ impl MllpFrame {
         if message_control_id.is_empty() {
             return None;
         }
+        let timestamp = chrono_now_str();
+        // Generate a unique NACK control ID (NACK + timestamp + original ID)
+        let nack_control_id = format!("NACK{}{}", &timestamp, message_control_id);
+        // Escape any pipe characters in error text to prevent breaking HL7 field structure
+        let escaped_text = error_text.replace('|', "\\F\\");
+        // Per HL7 spec: MSA-1 = AR, MSA-2 = original control ID, MSA-3 = error text
+        // Error code should be in separate ERR segment (not in MSA)
         Some(format!(
-            "MSH|^~\\&|||||{}||ACK|{}|P|2.3.1\rMSA|AR|{}|{}|{}",
-            chrono_now_str(),
-            message_control_id,
-            message_control_id,
-            error_code,
-            error_text,
+            "MSH|^~\\&|||||{}||ACK|{}|P|2.3.1\rMSA|AR|{}|{}: {} - {}",
+            timestamp, nack_control_id, message_control_id, error_code, error_code, escaped_text,
         ))
     }
 }
@@ -467,13 +470,23 @@ mod tests {
     #[test]
     fn build_ack_creates_aa_for_accept() {
         let ack = MllpFrame::build_ack("MSG001", true).unwrap();
+        // MSA-1 = AA, MSA-2 = original control ID
         assert!(ack.contains("MSA|AA|MSG001"));
     }
 
     #[test]
     fn build_ack_creates_ae_for_reject() {
         let ack = MllpFrame::build_ack("MSG001", false).unwrap();
+        // MSA-1 = AE, MSA-2 = original control ID
         assert!(ack.contains("MSA|AE|MSG001"));
+    }
+
+    #[test]
+    fn build_ack_has_unique_control_id() {
+        let ack = MllpFrame::build_ack("MSG001", true).unwrap();
+        // MSH-10 should contain ACK prefix + timestamp + original ID
+        assert!(ack.contains("||ACK|ACK"));
+        assert!(ack.contains("MSG001|P|2.3.1"));
     }
 
     #[test]
@@ -484,15 +497,23 @@ mod tests {
     #[test]
     fn build_nack_creates_ar_with_error_details() {
         let nack = MllpFrame::build_nack("MSG001", "101", "Invalid message").unwrap();
-        assert!(nack.contains("MSA|AR|MSG001|101|Invalid message"));
+        // MSA-1 = AR, MSA-2 = original control ID, MSA-3 = error text with code
+        assert!(nack.contains("MSA|AR|MSG001|101: 101 - Invalid message"));
     }
 
     #[test]
     fn build_nack_contains_ack_msh() {
         let nack = MllpFrame::build_nack("MSG001", "102", "Parse error").unwrap();
-        // Should have MSH with ACK message type
+        // Should have MSH with ACK message type and unique control ID
         assert!(nack.starts_with("MSH|^~\\&|||||"));
-        assert!(nack.contains("||ACK|MSG001|"));
+        assert!(nack.contains("||ACK|NACK")); // NACK prefix for unique ID
+    }
+
+    #[test]
+    fn build_nack_escapes_pipe_in_error_text() {
+        let nack = MllpFrame::build_nack("MSG001", "101", "Error|with|pipes").unwrap();
+        // Pipe characters should be escaped as \F\
+        assert!(nack.contains("Error\\F\\with\\F\\pipes"));
     }
 
     // T1.2 — Round-trip ACK parse test
@@ -518,5 +539,44 @@ mod tests {
         // Verify MSA segment exists
         let msa = msg.segment("MSA");
         assert!(msa.is_some(), "ACK should have MSA segment");
+
+        // Verify MSA-2 contains original control ID
+        let msa_seg = msa.unwrap();
+        let msa_2 = msa_seg.raw_fields().get(1);
+        assert_eq!(msa_2, Some(&"MSG12345"));
+    }
+
+    // T1.2 — Round-trip NACK parse test
+    #[test]
+    fn nack_roundtrip_parse() {
+        use hl7_v2::Hl7Message;
+
+        let nack_str = MllpFrame::build_nack("MSG999", "102", "Processing failed").unwrap();
+        let nack_bytes = nack_str.as_bytes();
+
+        // Parse the NACK using hl7-v2 crate
+        let parsed = Hl7Message::parse(nack_bytes);
+        assert!(
+            parsed.is_ok(),
+            "NACK should be valid HL7 that hl7-v2 can parse"
+        );
+
+        let msg = parsed.unwrap();
+        // Verify MSH segment exists
+        let msh = msg.segment("MSH");
+        assert!(msh.is_some(), "NACK should have MSH segment");
+
+        // Verify MSA segment exists
+        let msa = msg.segment("MSA");
+        assert!(msa.is_some(), "NACK should have MSA segment");
+
+        // Verify MSA-1 = AR (Application Reject)
+        let msa_seg = msa.unwrap();
+        let msa_1 = msa_seg.raw_fields().first();
+        assert_eq!(msa_1, Some(&"AR"));
+
+        // Verify MSA-2 contains original control ID
+        let msa_2 = msa_seg.raw_fields().get(1);
+        assert_eq!(msa_2, Some(&"MSG999"));
     }
 }
