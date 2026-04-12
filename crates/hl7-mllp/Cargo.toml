@@ -1,6 +1,6 @@
 [package]
 name = "hl7-mllp"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2024"
 rust-version = "1.94"
 description = "Transport-agnostic MLLP (Minimal Lower Layer Protocol) framing for HL7 v2 messages"

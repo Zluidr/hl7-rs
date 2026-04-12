@@ -90,7 +90,16 @@ This crate is part of a family of transport-agnostic HL7 and FHIR crates:
 
 ## Status
 
-`0.0.1` — initial placeholder. Active development in progress.
+`0.1.0` — Spec-complete MLLP implementation ([HL7 v2.5.1 Appendix C](https://hl7.org/implement/standards/product_brief.cfm?product_id=144)):
+
+- ✅ MLLP framing: encode/decode with VT/FS/CR delimiters
+- ✅ Streaming support: `MllpFramer` for incremental frame accumulation
+- ✅ ACK/NACK generation with optional `chrono` timestamps
+- ✅ `MllpTransport` trait for custom transports
+- ✅ Noncompliance feature for tolerant parsing
+- ✅ Comprehensive documentation and examples
+
+See [CHANGELOG.md](../CHANGELOG.md) for details.
 
 ## License
 
