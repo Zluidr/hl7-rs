@@ -6,29 +6,90 @@
 //! provides pure framing logic — encoding and decoding MLLP frames — without coupling
 //! to any specific async runtime, I/O library, or transport mechanism.
 //!
-//! ## Design
+//! ## What is MLLP?
 //!
-//! - [`MllpTransport`] trait: implement this for any byte-stream transport
-//! - [`MllpFrame`]: encode/decode MLLP frames from raw bytes
-//! - No tokio, no async-std, no opinion on I/O
+//! MLLP (Minimal Lower Layer Protocol) wraps HL7 v2 messages with simple byte delimiters
+//! for reliable streaming over TCP. It is defined in HL7 v2.5.1 Appendix C.
 //!
 //! ## MLLP Frame Format
 //!
+//! An MLLP frame wraps an HL7 message with 3 special bytes:
+//!
 //! ```text
-//! [VT] [HL7 message bytes ...] [FS] [CR]
-//!  0x0B                         0x1C  0x0D
+//! +--------+----------------------------+--------+--------+
+//! |  VT    |      HL7 message bytes     |   FS   |   CR   |
+//! | 0x0B   |        (variable)            | 0x1C   | 0x0D   |
+//! +--------+----------------------------+--------+--------+
+//!    ↑                                    ↑       ↑
+//!    Start of Block                       End of  Line
+//!    (Vertical Tab)                       Block   Terminator
+//!                                         (File   (Carriage
+//!                                         Sep.)   Return)
 //! ```
 //!
-//! ## Example
+//! - **VT (0x0B)**: Start of block marker. Every frame MUST begin with this byte.
+//! - **FS (0x1C)**: End of block marker. Every frame MUST end with FS followed by CR.
+//! - **CR (0x0D)**: Carriage return terminator. Required after FS.
+//!
+//! The payload between VT and FS-CR is the raw HL7 message (typically ER7-encoded).
+//!
+//! ## Design Philosophy
+//!
+//! This crate provides three main abstractions:
+//!
+//! - **[`MllpFrame`]**: Stateless encode/decode operations. Use for simple one-shot framing.
+//! - **[`MllpFramer`]**: Stateful streaming accumulator. Use for network I/O where data
+//!   arrives in chunks.
+//! - **[`MllpTransport`]**: Trait for implementing transports (TCP, serial, etc.).
+//!
+//! All operations are:
+//! - **Zero-allocation where possible**: `decode()` returns a slice into the original buffer.
+//! - **No async/await**: Works with blocking or async code equally well.
+//! - **No I/O opinions**: You bring your own sockets/streams.
+//!
+//! ## Quick Start
+//!
+//! ### Encode a message for sending
 //!
 //! ```rust
-//! use hl7_mllp::{MllpFrame, MllpError};
+//! use hl7_mllp::MllpFrame;
 //!
-//! let raw_hl7 = b"MSH|^~\\&|...";
+//! let raw_hl7 = b"MSH|^~\\&|SendApp|SendFac|20240101120000||ORU^R01|12345|P|2.5\r";
 //! let framed = MllpFrame::encode(raw_hl7);
+//! // framed now contains: VT + raw_hl7 + FS + CR
+//! // Send `framed` over your TCP socket...
+//! ```
 //!
+//! ### Decode a received frame
+//!
+//! ```rust
+//! use hl7_mllp::MllpFrame;
+//! use bytes::Bytes;
+//!
+//! // Received from TCP socket...
+//! let framed: Bytes = MllpFrame::encode(b"MSH|^~\\&|...");
+//!
+//! // decode() returns a slice into the original buffer (zero copy)
 //! let decoded = MllpFrame::decode(&framed).unwrap();
-//! assert_eq!(decoded, raw_hl7);
+//! assert_eq!(decoded, b"MSH|^~\\&|...");
+//! ```
+//!
+//! ### Streaming with MllpFramer
+//!
+//! ```rust
+//! use hl7_mllp::MllpFramer;
+//!
+//! let mut framer = MllpFramer::new();
+//!
+//! // Data arrives in chunks from TCP...
+//! framer.push(b"\x0BMSH|^~\\&|");
+//! framer.push(b"test message\x1C\x0D");
+//!
+//! // Extract complete frame when available
+//! if let Some(frame) = framer.next_frame() {
+//!     // Process the complete frame
+//!     println!("Received {} bytes", frame.len());
+//! }
 //! ```
 
 #![forbid(unsafe_code)]
@@ -111,7 +172,32 @@ pub struct MllpFrame;
 impl MllpFrame {
     /// Wrap a raw HL7 message payload in an MLLP frame.
     ///
-    /// Produces: `[VT] payload [FS] [CR]`
+    /// # Output Layout
+    ///
+    /// The returned [`Bytes`] contains exactly:
+    ///
+    /// | Byte(s) | Value | Description |
+    /// |---------|-------|-------------|
+    /// | 0       | 0x0B  | VT (Vertical Tab) - start of block |
+    /// | 1..n    | payload | Raw HL7 message bytes (n = payload.len()) |
+    /// | n+1     | 0x1C  | FS (File Separator) - end of block |
+    /// | n+2     | 0x0D  | CR (Carriage Return) - terminator |
+    ///
+    /// Total length: `payload.len() + 3` bytes.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use hl7_mllp::{MllpFrame, VT, FS, CR};
+    ///
+    /// let payload = b"MSH|^~\\&|test";
+    /// let frame = MllpFrame::encode(payload);
+    ///
+    /// assert_eq!(frame[0], VT);
+    /// assert_eq!(&frame[1..14], payload);
+    /// assert_eq!(frame[14], FS);
+    /// assert_eq!(frame[15], CR);
+    /// ```
     pub fn encode(payload: &[u8]) -> Bytes {
         let mut buf = BytesMut::with_capacity(payload.len() + 3);
         buf.put_u8(VT);
@@ -123,7 +209,41 @@ impl MllpFrame {
 
     /// Extract the HL7 payload from an MLLP-framed buffer.
     ///
-    /// Returns a slice into the original buffer — zero copy.
+    /// # Zero-Copy Guarantee
+    ///
+    /// This method returns a slice `&[u8]` that points into the original `buf`.
+    /// No data is copied — this is O(1) regardless of payload size.
+    ///
+    /// The returned slice has the same lifetime as the input buffer. If you need
+    /// an owned copy, call `.to_vec()` on the result.
+    ///
+    /// # Validation
+    ///
+    /// This function validates:
+    /// - Buffer length ≥ 4 bytes (VT + at least 1 payload byte + FS + CR)
+    /// - First byte is VT (0x0B)
+    /// - Last two bytes are FS (0x1C) + CR (0x0D)
+    /// - Payload is not empty
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MllpError`] variants:
+    /// - [`Incomplete`](MllpError::Incomplete) if buffer is too short
+    /// - [`MissingStartByte`](MllpError::MissingStartByte) if first byte is not VT
+    /// - [`MissingEndSequence`](MllpError::MissingEndSequence) if FS+CR not found at end
+    /// - [`EmptyPayload`](MllpError::EmptyPayload) if payload length is 0
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use hl7_mllp::MllpFrame;
+    ///
+    /// let frame = MllpFrame::encode(b"MSH|test");
+    /// let payload = MllpFrame::decode(&frame).unwrap();
+    ///
+    /// // payload is a slice into frame — zero copy
+    /// assert_eq!(payload, b"MSH|test");
+    /// ```
     pub fn decode(buf: &[u8]) -> Result<&[u8], MllpError> {
         if buf.len() < 4 {
             return Err(MllpError::Incomplete);
@@ -306,21 +426,54 @@ fn chrono_now_str() -> String {
 
 /// Stateful streaming frame accumulator for MLLP protocol.
 ///
-/// This struct maintains an internal buffer and allows incremental
-/// accumulation of bytes from a stream. Complete frames can be
-/// extracted as they become available.
+/// `MllpFramer` is designed for network I/O where data arrives in chunks.
+/// It maintains an internal [`BytesMut`] buffer and provides incremental
+/// frame extraction as complete MLLP frames become available.
 ///
-/// # Example
-/// ```
+/// # Streaming Usage Pattern
+///
+/// The typical streaming workflow:
+/// 1. Create a framer with `MllpFramer::new()`
+/// 2. In a loop, read bytes from your socket/stream
+/// 3. Push received bytes into the framer with `push()`
+/// 4. Repeatedly call `next_frame()` to extract all complete frames
+/// 5. Process each frame, then continue reading
+///
+/// # Handling Partial Frames
+///
+/// If `next_frame()` returns `None`, the buffer contains a partial frame
+/// (incomplete). Keep the framer alive and push more bytes — the partial
+/// data is preserved for the next call.
+///
+/// # Thread Safety
+///
+/// `MllpFramer` is not `Sync` — it cannot be shared between threads.
+/// It is `Clone` (cheap, since [`BytesMut`] uses ref-counting), so you
+/// can clone it if needed for single-threaded scenarios.
+///
+/// # Example: TCP Streaming
+///
+/// ```rust
 /// use hl7_mllp::MllpFramer;
 ///
 /// let mut framer = MllpFramer::new();
-/// framer.push(b"\x0BMSH|test\x1C\x0D");
 ///
-/// if let Some(frame) = framer.next_frame() {
-///     // Process complete frame
-///     assert_eq!(frame, b"\x0BMSH|test\x1C\x0D");
-/// }
+/// // Simulate receiving data in chunks from TCP
+/// framer.push(b"\x0BMSH|^~\\&|");          // First chunk
+/// framer.push(b"partial data...");          // More data
+/// framer.push(b"\x1C\x0D\x0BMSH|second");   // Complete frame + partial
+///
+/// // Extract first complete frame
+/// let frame1 = framer.next_frame().unwrap();
+/// assert!(frame1.starts_with(&[0x0B]));      // Starts with VT
+/// assert!(frame1.ends_with(&[0x1C, 0x0D]));  // Ends with FS+CR
+///
+/// // No more complete frames yet
+/// assert!(framer.next_frame().is_none());
+///
+/// // Push remaining bytes to complete second frame
+/// framer.push(b"|more\x1C\x0D");
+/// let frame2 = framer.next_frame().unwrap();
 /// ```
 #[derive(Debug, Clone)]
 pub struct MllpFramer {
@@ -386,9 +539,70 @@ impl Default for MllpFramer {
 
 /// Trait for types that can act as an MLLP byte-stream transport.
 ///
-/// Implement this for TCP streams, serial ports, in-memory buffers,
-/// or any other byte-stream source. The crate provides no concrete
+/// Implement this trait for TCP streams, serial ports, in-memory buffers,
+/// or any other byte-stream source. This crate provides no concrete
 /// implementation — that is intentionally left to consumers.
+///
+/// # Implementation Contract
+///
+/// ## Thread Safety
+/// - The transport is **not required to be `Sync`**. Each transport instance
+///   should be used from a single thread, or synchronized externally.
+/// - The transport **should be `Send`** if you need to move it between threads.
+///
+/// ## Error Handling
+/// - `read_frame` should return an error only for I/O failures (broken socket,
+///   timeout, etc.), not for malformed MLLP frames.
+/// - Malformed frames should be handled by the caller after successful read.
+/// - `write_frame` should complete the write or return an error — partial
+///   writes are considered failures.
+///
+/// ## Frame Boundaries
+/// - `read_frame` must return **exactly one complete MLLP frame** per call.
+/// - It should accumulate bytes internally until `FS+CR` is found.
+/// - Consider using [`MllpFramer`] for the accumulation logic.
+///
+/// ## Blocking Behavior
+/// - `read_frame` may block until a complete frame is available.
+/// - Non-blocking transports should use an async runtime and return
+///   `WouldBlock` errors appropriately.
+///
+/// # Example Implementation
+///
+/// ```rust,ignore
+/// use hl7_mllp::{MllpTransport, MllpFramer, MllpFrame};
+/// use std::net::TcpStream;
+/// use std::io::{self, Read, Write};
+///
+/// pub struct TcpMllpTransport {
+///     stream: TcpStream,
+///     framer: MllpFramer,
+/// }
+///
+/// impl MllpTransport for TcpMllpTransport {
+///     type Error = io::Error;
+///
+///     fn read_frame(&mut self) -> Result<Vec<u8>, Self::Error> {
+///         let mut buf = [0u8; 1024];
+///         loop {
+///             // Try to extract a complete frame first
+///             if let Some(frame) = self.framer.next_frame() {
+///                 return Ok(frame);
+///             }
+///             // Read more bytes from TCP
+///             let n = self.stream.read(&mut buf)?;
+///             if n == 0 {
+///                 return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "connection closed"));
+///             }
+///             self.framer.push(&buf[..n]);
+///         }
+///     }
+///
+///     fn write_frame(&mut self, frame: &[u8]) -> Result<(), Self::Error> {
+///         self.stream.write_all(frame)
+///     }
+/// }
+/// ```
 pub trait MllpTransport {
     /// The error type returned by this transport.
     type Error: std::error::Error;
@@ -397,10 +611,13 @@ pub trait MllpTransport {
     ///
     /// Implementations are responsible for accumulating bytes until a
     /// complete frame is available. Use [`MllpFrame::find_frame_end`]
-    /// as the completion signal.
+    /// or [`MllpFramer`] as the completion signal.
     fn read_frame(&mut self) -> Result<Vec<u8>, Self::Error>;
 
-    /// Write an MLLP-framed ACK or NACK back to the sender.
+    /// Write an MLLP-framed message to the transport.
+    ///
+    /// The frame should be a complete MLLP frame (including VT and FS+CR).
+    /// Implementations must ensure the entire frame is written.
     fn write_frame(&mut self, frame: &[u8]) -> Result<(), Self::Error>;
 }
 

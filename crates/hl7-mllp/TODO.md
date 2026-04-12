@@ -56,12 +56,12 @@ Transport-agnostic MLLP framing for HL7 v2 messages.
 - [x] All error variants — verify messages are actionable (no "unexpected error")
 
 ### T1.5 — Documentation
-- [ ] Module-level doc: explain MLLP framing in plain language with ASCII diagram
-- [ ] `MllpFrame::encode` — document exact output byte layout
-- [ ] `MllpFrame::decode` — document zero-copy guarantee (lifetime note)
-- [ ] `MllpFramer` — document streaming usage with example
-- [ ] `MllpTransport` — document expected contract (thread safety, error handling)
-- [ ] Add `examples/tcp_listener.rs` — minimal blocking TCP MLLP listener
+- [x] Module-level doc: explain MLLP framing in plain language with ASCII diagram
+- [x] `MllpFrame::encode` — document exact output byte layout
+- [x] `MllpFrame::decode` — document zero-copy guarantee (lifetime note)
+- [x] `MllpFramer` — document streaming usage with example
+- [x] `MllpTransport` — document expected contract (thread safety, error handling)
+- [x] Add `examples/tcp_listener.rs` — minimal blocking TCP MLLP listener
 
 ### T1.6 — Tests
 - [ ] Test: `encode` then `decode` round-trip with Unicode payload
