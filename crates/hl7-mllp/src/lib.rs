@@ -214,22 +214,62 @@ impl MllpFrame {
 
     /// Build a minimal HL7 ACK message payload (not MLLP-framed).
     ///
-    /// `msh_9` should be the message control ID from the original MSH-10.
-    pub fn build_ack(message_control_id: &str, accepting: bool) -> String {
+    /// `message_control_id` should be the message control ID from the original MSH-10.
+    ///
+    /// # Errors
+    /// Returns `None` if `message_control_id` is empty.
+    pub fn build_ack(message_control_id: &str, accepting: bool) -> Option<String> {
+        if message_control_id.is_empty() {
+            return None;
+        }
         let code = if accepting { "AA" } else { "AE" };
-        format!(
+        Some(format!(
             "MSH|^~\\&|||||{}||ACK|{}|P|2.3.1\rMSA|{}|{}",
             chrono_now_str(),
             message_control_id,
             code,
             message_control_id,
-        )
+        ))
+    }
+
+    /// Build a minimal HL7 NACK message payload with error details (not MLLP-framed).
+    ///
+    /// `message_control_id` should be the message control ID from the original MSH-10.
+    /// `error_code` should be an HL7 error code (e.g., "101", "102").
+    /// `error_text` should be a human-readable error description.
+    ///
+    /// # Errors
+    /// Returns `None` if `message_control_id` is empty.
+    pub fn build_nack(
+        message_control_id: &str,
+        error_code: &str,
+        error_text: &str,
+    ) -> Option<String> {
+        if message_control_id.is_empty() {
+            return None;
+        }
+        Some(format!(
+            "MSH|^~\\&|||||{}||ACK|{}|P|2.3.1\rMSA|AR|{}|{}|{}",
+            chrono_now_str(),
+            message_control_id,
+            message_control_id,
+            error_code,
+            error_text,
+        ))
     }
 }
 
 fn chrono_now_str() -> String {
-    // Minimal timestamp — avoids pulling in chrono for a placeholder
-    "20250101000000".to_string()
+    #[cfg(feature = "timestamps")]
+    {
+        use chrono::Local;
+        Local::now().format("%Y%m%d%H%M%S").to_string()
+    }
+    #[cfg(not(feature = "timestamps"))]
+    {
+        // Default placeholder timestamp — caller should provide real timestamp
+        "20250101000000".to_string()
+    }
 }
 
 /// Trait for types that can act as an MLLP byte-stream transport.
@@ -415,5 +455,68 @@ mod tests {
             // In strict mode, this should not find a complete frame
             // (But we can't test this here since it's cfg-gated)
         }
+    }
+
+    // T1.2 — ACK generation tests
+    #[test]
+    fn build_ack_validates_empty_control_id() {
+        assert!(MllpFrame::build_ack("", true).is_none());
+        assert!(MllpFrame::build_ack("", false).is_none());
+    }
+
+    #[test]
+    fn build_ack_creates_aa_for_accept() {
+        let ack = MllpFrame::build_ack("MSG001", true).unwrap();
+        assert!(ack.contains("MSA|AA|MSG001"));
+    }
+
+    #[test]
+    fn build_ack_creates_ae_for_reject() {
+        let ack = MllpFrame::build_ack("MSG001", false).unwrap();
+        assert!(ack.contains("MSA|AE|MSG001"));
+    }
+
+    #[test]
+    fn build_nack_validates_empty_control_id() {
+        assert!(MllpFrame::build_nack("", "101", "Error").is_none());
+    }
+
+    #[test]
+    fn build_nack_creates_ar_with_error_details() {
+        let nack = MllpFrame::build_nack("MSG001", "101", "Invalid message").unwrap();
+        assert!(nack.contains("MSA|AR|MSG001|101|Invalid message"));
+    }
+
+    #[test]
+    fn build_nack_contains_ack_msh() {
+        let nack = MllpFrame::build_nack("MSG001", "102", "Parse error").unwrap();
+        // Should have MSH with ACK message type
+        assert!(nack.starts_with("MSH|^~\\&|||||"));
+        assert!(nack.contains("||ACK|MSG001|"));
+    }
+
+    // T1.2 — Round-trip ACK parse test
+    #[test]
+    fn ack_roundtrip_parse() {
+        use hl7_v2::Hl7Message;
+
+        let ack_str = MllpFrame::build_ack("MSG12345", true).unwrap();
+        let ack_bytes = ack_str.as_bytes();
+
+        // Parse the ACK using hl7-v2 crate
+        let parsed = Hl7Message::parse(ack_bytes);
+        assert!(
+            parsed.is_ok(),
+            "ACK should be valid HL7 that hl7-v2 can parse"
+        );
+
+        let msg = parsed.unwrap();
+        // Verify MSH segment exists
+        let msh = msg.segment("MSH");
+        assert!(msh.is_some(), "ACK should have MSH segment");
+
+        // Verify MSA segment exists
+        let msa = msg.segment("MSA");
+        assert!(msa.is_some(), "ACK should have MSA segment");
     }
 }

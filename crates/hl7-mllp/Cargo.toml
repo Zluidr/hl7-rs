@@ -12,10 +12,13 @@ categories = ["encoding", "network-programming", "science"]
 
 [dependencies]
 bytes = { workspace = true }
+chrono = { version = "0.4", optional = true, default-features = false, features = ["clock", "std"] }
 
 [features]
 default = []
 noncompliance = []
+timestamps = ["dep:chrono"]
 
 [dev-dependencies]
 tokio = { workspace = true }
+hl7-v2 = { path = "../hl7-v2" }

@@ -33,13 +33,13 @@ Transport-agnostic MLLP framing for HL7 v2 messages.
   - [x] Feature-gate: `#[cfg(feature = "noncompliance")]`
 
 ### T1.2 — ACK generation
-- [ ] Replace `chrono_now_str()` stub with real timestamp
-  - [ ] Add `chrono` as optional dependency behind `timestamps` feature
-  - [ ] Default: caller provides timestamp string
-  - [ ] With `timestamps` feature: auto-generate HL7 DTM format (`YYYYMMDDHHmmss`)
-- [ ] `build_ack` — validate `message_control_id` is non-empty
-- [ ] Add `build_nack(message_control_id: &str, error_code: &str, error_text: &str) -> String`
-- [ ] Test: round-trip ACK parse (ACK is valid HL7 that `hl7-v2` can parse)
+- [x] Replace `chrono_now_str()` stub with real timestamp
+  - [x] Add `chrono` as optional dependency behind `timestamps` feature
+  - [x] Default: caller provides timestamp string
+  - [x] With `timestamps` feature: auto-generate HL7 DTM format (`YYYYMMDDHHmmss`)
+- [x] `build_ack` — validate `message_control_id` is non-empty
+- [x] Add `build_nack(message_control_id: &str, error_code: &str, error_text: &str) -> Option<String>`
+- [x] Test: round-trip ACK parse (ACK is valid HL7 that `hl7-v2` can parse)
 
 ### T1.3 — Streaming support
 - [ ] `MllpFramer` struct — stateful streaming frame accumulator
