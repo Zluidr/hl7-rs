@@ -51,9 +51,9 @@ Transport-agnostic MLLP framing for HL7 v2 messages.
 - [x] Test: push two frames in one call, recover both
 
 ### T1.4 — Error improvements
-- [ ] Add `MllpError::InvalidFrame { reason: String }` for future use
-- [ ] Implement `From<MllpError> for std::io::Error` (for transport impls)
-- [ ] All error variants — verify messages are actionable (no "unexpected error")
+- [x] Add `MllpError::InvalidFrame { reason: String }` for future use
+- [x] Implement `From<MllpError> for std::io::Error` (for transport impls)
+- [x] All error variants — verify messages are actionable (no "unexpected error")
 
 ### T1.5 — Documentation
 - [ ] Module-level doc: explain MLLP framing in plain language with ASCII diagram

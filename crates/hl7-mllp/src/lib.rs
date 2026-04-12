@@ -56,22 +56,51 @@ pub enum MllpError {
     EmptyPayload,
     /// The buffer was too short to contain a complete frame.
     Incomplete,
+    /// Invalid frame format with detailed reason.
+    InvalidFrame {
+        /// Detailed explanation of why the frame is invalid.
+        reason: String,
+    },
 }
 
 impl std::fmt::Display for MllpError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::MissingStartByte => write!(f, "MLLP frame missing VT start byte (0x0B)"),
-            Self::MissingEndSequence => {
-                write!(f, "MLLP frame missing FS+CR end sequence (0x1C 0x0D)")
+            Self::MissingStartByte => {
+                write!(
+                    f,
+                    "MLLP frame missing VT start byte (expected 0x0B at position 0)"
+                )
             }
-            Self::EmptyPayload => write!(f, "MLLP frame contains no HL7 payload"),
-            Self::Incomplete => write!(f, "Buffer does not contain a complete MLLP frame"),
+            Self::MissingEndSequence => {
+                write!(
+                    f,
+                    "MLLP frame missing FS+CR end sequence (expected 0x1C 0x0D)"
+                )
+            }
+            Self::EmptyPayload => {
+                write!(f, "MLLP frame contains no HL7 payload between delimiters")
+            }
+            Self::Incomplete => {
+                write!(
+                    f,
+                    "Buffer too short for complete MLLP frame (need at least 4 bytes: VT + payload + FS + CR)"
+                )
+            }
+            Self::InvalidFrame { reason } => {
+                write!(f, "Invalid MLLP frame: {reason}")
+            }
         }
     }
 }
 
 impl std::error::Error for MllpError {}
+
+impl From<MllpError> for std::io::Error {
+    fn from(err: MllpError) -> Self {
+        std::io::Error::new(std::io::ErrorKind::InvalidData, err)
+    }
+}
 
 /// MLLP frame encoder and decoder.
 ///
