@@ -16,6 +16,8 @@ bytes      = "1"
 serde      = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio      = { version = "1", features = ["full"] }
+# Minimum version floor: RUSTSEC-2026-0098 / RUSTSEC-2026-0099 fixed in 0.103.12
+rustls-webpki = "0.103.12"
 
 # Intra-workspace path references (used during local dev)
 hl7-mllp   = { path = "crates/hl7-mllp",   version = "0.0.1" }
