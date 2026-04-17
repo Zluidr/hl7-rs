@@ -531,6 +531,29 @@ impl MllpFramer {
     pub fn clear(&mut self) {
         self.buffer.clear();
     }
+
+    /// Returns a mutable reference to the internal buffer for direct I/O.
+    ///
+    /// This is useful for cancellation-safe async reads. Using
+    /// [`tokio::io::AsyncReadExt::read_buf`] with this buffer ensures that
+    /// bytes are atomically appended without risk of loss if the future
+    /// is cancelled mid-read.
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// use hl7_mllp::MllpFramer;
+    /// use tokio::io::AsyncReadExt;
+    ///
+    /// async fn read_frame<R: AsyncReadExt>(framer: &mut MllpFramer, reader: &mut R) {
+    ///     // read_buf atomically appends to the framer's buffer
+    ///     let n = reader.read_buf(framer.read_buf()).await.unwrap();
+    ///     println!("Appended {} bytes", n);
+    /// }
+    /// ```
+    pub fn read_buf(&mut self) -> &mut BytesMut {
+        &mut self.buffer
+    }
 }
 
 impl Default for MllpFramer {
@@ -670,19 +693,19 @@ pub trait MllpTransport {
 ///     type Error = std::io::Error;
 ///
 ///     async fn read_frame(&mut self) -> Result<Vec<u8>, Self::Error> {
-///         let mut buf = [0u8; 1024];
 ///         loop {
 ///             if let Some(frame) = self.framer.next_frame() {
 ///                 return Ok(frame);
 ///             }
-///             let n = self.stream.read(&mut buf).await?;
+///             // Use read_buf for cancellation safety - bytes go directly
+///             // into the framer's buffer, never lost if the future is dropped
+///             let n = self.stream.read_buf(self.framer.read_buf()).await?;
 ///             if n == 0 {
 ///                 return Err(std::io::Error::new(
 ///                     std::io::ErrorKind::UnexpectedEof,
 ///                     "connection closed",
 ///                 ));
 ///             }
-///             self.framer.push(&buf[..n]);
 ///         }
 ///     }
 ///

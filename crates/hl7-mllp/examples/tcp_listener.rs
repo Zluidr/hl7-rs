@@ -91,11 +91,12 @@ fn handle_client(mut stream: TcpStream) {
 }
 
 fn extract_control_id(payload: &str) -> String {
-    // Simple extraction of MSH-10 from ER7-encoded message
-    // Format: MSH|^~\&|...|...|...|...|...|...|MSG_TYPE|CONTROL_ID|...
+    // Simple extraction of MSH-10 from ER7-encoded message.
+    // MSH-10 is the 10th field: MSH|^~\&|f3|f4|f5|f6|f7|f8|f9|f10(MSH-10)|...
+    // Split by | gives indices: 0=MSH, 1=^~\&, 2=f3, ..., 10=MSH-10
     payload
         .split('|')
-        .nth(9) // MSH-10 is the 10th field (0-indexed: 9)
+        .nth(10)
         .map(|s| s.split('\r').next().unwrap_or(s).to_string())
         .unwrap_or_else(|| "UNKNOWN".to_string())
 }

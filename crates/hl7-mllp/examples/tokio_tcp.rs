@@ -30,23 +30,22 @@ impl AsyncMllpTransport for AsyncTcpMllpTransport {
     type Error = io::Error;
 
     async fn read_frame(&mut self) -> Result<Vec<u8>, Self::Error> {
-        let mut buf = [0u8; 4096];
-
         loop {
             // Try to extract a complete frame first
             if let Some(frame) = self.framer.next_frame() {
                 return Ok(frame);
             }
 
-            // Read more bytes from TCP
-            let n = self.stream.read(&mut buf).await?;
+            // Read more bytes directly into the framer's buffer.
+            // Using read_buf (not read) is cancellation-safe: if the future
+            // is dropped mid-read, the bytes are already in the buffer.
+            let n = self.stream.read_buf(self.framer.read_buf()).await?;
             if n == 0 {
                 return Err(io::Error::new(
                     io::ErrorKind::UnexpectedEof,
                     "connection closed",
                 ));
             }
-            self.framer.push(&buf[..n]);
         }
     }
 
@@ -126,10 +125,12 @@ async fn handle_client(stream: TcpStream, addr: String) -> io::Result<()> {
 }
 
 fn extract_control_id(payload: &str) -> String {
-    // Simple extraction of MSH-10 from ER7-encoded message
+    // Simple extraction of MSH-10 from ER7-encoded message.
+    // MSH-10 is the 10th field: MSH|^~\&|f3|f4|f5|f6|f7|f8|f9|f10(MSH-10)|...
+    // Split by | gives indices: 0=MSH, 1=^~\&, 2=f3, ..., 10=MSH-10
     payload
         .split('|')
-        .nth(9)
+        .nth(10)
         .map(|s| s.split('\r').next().unwrap_or(s).to_string())
         .unwrap_or_else(|| "UNKNOWN".to_string())
 }
