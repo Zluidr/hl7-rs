@@ -13,12 +13,14 @@ categories = ["encoding", "network-programming", "science"]
 [dependencies]
 bytes = { workspace = true }
 chrono = { version = "0.4", optional = true, default-features = false, features = ["clock", "std"] }
+tokio = { version = "1", optional = true, default-features = false, features = ["io-util"] }
 
 [features]
 default = []
 noncompliance = []
 timestamps = ["dep:chrono"]
+async = ["dep:tokio"]
 
 [dev-dependencies]
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
 hl7-v2 = { path = "../hl7-v2" }

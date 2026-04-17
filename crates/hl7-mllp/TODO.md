@@ -75,11 +75,11 @@ Transport-agnostic MLLP framing for HL7 v2 messages.
 ## Phase 2 — Async & Ecosystem `[0.2.0]`
 
 ### T2.1 — Async transport trait (optional)
-- [ ] Add `AsyncMllpTransport` trait behind `async` feature flag
-  - [ ] `async fn read_frame(&mut self) -> Result<Vec<u8>, Self::Error>`
-  - [ ] `async fn write_frame(&mut self, frame: &[u8]) -> Result<(), Self::Error>`
-  - [ ] Requires `async-trait` or AFIT (Rust 1.75+ native async fn in trait)
-- [ ] Add `examples/tokio_tcp.rs` — tokio TCP implementation of `AsyncMllpTransport`
+- [x] Add `AsyncMllpTransport` trait behind `async` feature flag
+  - [x] `async fn read_frame(&mut self) -> Result<Vec<u8>, Self::Error>`
+  - [x] `async fn write_frame(&mut self, frame: &[u8]) -> Result<(), Self::Error>`
+  - [x] Uses AFIT (Rust 1.75+ native async fn in trait)
+- [x] Add `examples/tokio_tcp.rs` — tokio TCP implementation of `AsyncMllpTransport`
 
 ### T2.2 — `no_std` compatibility
 - [ ] Audit: identify `std`-only dependencies

@@ -41,10 +41,12 @@
 //! - **[`MllpFramer`]**: Stateful streaming accumulator. Use for network I/O where data
 //!   arrives in chunks.
 //! - **[`MllpTransport`]**: Trait for implementing transports (TCP, serial, etc.).
+//! - **[`AsyncMllpTransport`]**: Async variant of the transport trait (requires `async` feature).
 //!
 //! All operations are:
 //! - **Zero-allocation where possible**: `decode()` returns a slice into the original buffer.
-//! - **No async/await**: Works with blocking or async code equally well.
+//! - **No async/await in core**: Works with blocking or async code equally well.
+//! - **Optional async support**: Enable the `async` feature for async transport trait.
 //! - **No I/O opinions**: You bring your own sockets/streams.
 //!
 //! ## Quick Start
@@ -619,6 +621,99 @@ pub trait MllpTransport {
     /// The frame should be a complete MLLP frame (including VT and FS+CR).
     /// Implementations must ensure the entire frame is written.
     fn write_frame(&mut self, frame: &[u8]) -> Result<(), Self::Error>;
+}
+
+/// Async trait for types that can act as an MLLP byte-stream transport.
+///
+/// This is the async equivalent of [`MllpTransport`]. Implement this for
+/// async TCP streams, TLS connections, or any other async byte-stream source.
+///
+/// # Feature Flag
+///
+/// This trait is only available when the `async` feature is enabled:
+///
+/// ```toml
+/// [dependencies]
+/// hl7-mllp = { version = "0.1", features = ["async"] }
+/// ```
+///
+/// # Implementation Contract
+///
+/// Same contract as [`MllpTransport`], but with async methods:
+///
+/// ## Cancellation Safety
+/// - `read_frame` should be cancellation-safe (leave the transport in a
+///   consistent state if the future is dropped mid-read)
+/// - Consider using [`tokio::io::AsyncReadExt::read_buf`] for cancellation safety
+///
+/// ## Error Handling
+/// - Return transport-level errors (broken connection, timeout, etc.)
+/// - MLLP framing errors should be handled by the caller after successful read
+///
+/// ## Frame Boundaries
+/// - Return exactly one complete MLLP frame per call
+/// - Accumulate bytes internally using [`MllpFramer`] until `FS+CR` is found
+///
+/// # Example Implementation
+///
+/// ```rust,ignore
+/// use hl7_mllp::AsyncMllpTransport;
+/// use tokio::io::{AsyncReadExt, AsyncWriteExt};
+/// use tokio::net::TcpStream;
+///
+/// pub struct AsyncTcpMllpTransport {
+///     stream: TcpStream,
+///     framer: MllpFramer,
+/// }
+///
+/// impl AsyncMllpTransport for AsyncTcpMllpTransport {
+///     type Error = std::io::Error;
+///
+///     async fn read_frame(&mut self) -> Result<Vec<u8>, Self::Error> {
+///         let mut buf = [0u8; 1024];
+///         loop {
+///             if let Some(frame) = self.framer.next_frame() {
+///                 return Ok(frame);
+///             }
+///             let n = self.stream.read(&mut buf).await?;
+///             if n == 0 {
+///                 return Err(std::io::Error::new(
+///                     std::io::ErrorKind::UnexpectedEof,
+///                     "connection closed",
+///                 ));
+///             }
+///             self.framer.push(&buf[..n]);
+///         }
+///     }
+///
+///     async fn write_frame(&mut self, frame: &[u8]) -> Result<(), Self::Error> {
+///         self.stream.write_all(frame).await
+///     }
+/// }
+/// ```
+#[cfg(feature = "async")]
+pub trait AsyncMllpTransport {
+    /// The error type returned by this transport.
+    type Error: std::error::Error + Send;
+
+    /// Read the next complete MLLP-framed message from the transport.
+    ///
+    /// Implementations are responsible for accumulating bytes until a
+    /// complete frame is available. Use [`MllpFrame::find_frame_end`]
+    /// or [`MllpFramer`] as the completion signal.
+    ///
+    /// # Cancellation Safety
+    ///
+    /// This method should be cancellation-safe. If the future is dropped
+    /// before completion, the transport should remain in a consistent state
+    /// such that a subsequent call will continue from where it left off.
+    async fn read_frame(&mut self) -> Result<Vec<u8>, Self::Error>;
+
+    /// Write an MLLP-framed message to the transport.
+    ///
+    /// The frame should be a complete MLLP frame (including VT and FS+CR).
+    /// Implementations must ensure the entire frame is written.
+    async fn write_frame(&mut self, frame: &[u8]) -> Result<(), Self::Error>;
 }
 
 #[cfg(test)]
