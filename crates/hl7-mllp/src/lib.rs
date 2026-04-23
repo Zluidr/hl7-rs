@@ -94,8 +94,15 @@
 //! }
 //! ```
 
+#![cfg_attr(not(feature = "std"), no_std)]
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+#[cfg(not(feature = "std"))]
+use alloc::{format, string::String, string::ToString, vec::Vec};
 
 use bytes::{BufMut, Bytes, BytesMut};
 
@@ -126,8 +133,8 @@ pub enum MllpError {
     },
 }
 
-impl std::fmt::Display for MllpError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for MllpError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::MissingStartByte => {
                 write!(
@@ -157,8 +164,10 @@ impl std::fmt::Display for MllpError {
     }
 }
 
+#[cfg(feature = "std")]
 impl std::error::Error for MllpError {}
 
+#[cfg(feature = "std")]
 impl From<MllpError> for std::io::Error {
     fn from(err: MllpError) -> Self {
         std::io::Error::new(std::io::ErrorKind::InvalidData, err)
@@ -628,6 +637,7 @@ impl Default for MllpFramer {
 ///     }
 /// }
 /// ```
+#[cfg(feature = "std")]
 pub trait MllpTransport {
     /// The error type returned by this transport.
     type Error: std::error::Error;

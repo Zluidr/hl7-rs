@@ -82,11 +82,11 @@ Transport-agnostic MLLP framing for HL7 v2 messages.
 - [x] Add `examples/tokio_tcp.rs` — tokio TCP implementation of `AsyncMllpTransport`
 
 ### T2.2 — `no_std` compatibility
-- [ ] Audit: identify `std`-only dependencies
-  - [ ] `bytes` crate — check `no_std` support (it has `alloc` feature)
-  - [ ] `std::error::Error` — gated behind `std` feature
-- [ ] Add `default-features = false` path for embedded targets
-- [ ] Test compile with `--no-default-features` + `alloc`
+- [x] Audit: identify `std`-only dependencies
+  - [x] `bytes` crate — supports `no_std` with `default-features = false` (uses `alloc` internally)
+  - [x] `std::error::Error` — gated behind `std` feature
+- [x] Add `default-features = false` path for embedded targets
+- [x] Test compile with `--no-default-features`
 
 ### T2.3 — Performance
 - [ ] Add `criterion` benchmark: `encode` + `decode` throughput (MB/s)

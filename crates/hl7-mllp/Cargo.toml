@@ -11,15 +11,16 @@ keywords = ["hl7", "mllp", "healthcare", "medical", "interoperability"]
 categories = ["encoding", "network-programming", "science"]
 
 [dependencies]
-bytes = { workspace = true }
+bytes = { version = "1", default-features = false }
 chrono = { version = "0.4", optional = true, default-features = false, features = ["clock", "std"] }
 tokio = { version = "1", optional = true, default-features = false, features = ["io-util", "net"] }
 
 [features]
-default = []
+default = ["std"]
+std = []
 noncompliance = []
 timestamps = ["dep:chrono"]
-async = ["dep:tokio"]
+async = ["dep:tokio", "std"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full"] }
