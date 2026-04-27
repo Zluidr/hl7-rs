@@ -234,11 +234,47 @@ impl MllpFrame {
     /// ```
     pub fn encode(payload: &[u8]) -> Bytes {
         let mut buf = BytesMut::with_capacity(payload.len() + 3);
+        Self::encode_into(payload, &mut buf);
+        buf.freeze()
+    }
+
+    /// Encode an HL7 payload into an MLLP frame, writing into an existing buffer.
+    ///
+    /// This is the zero-allocation variant of [`encode`]. Use it when you have a
+    /// reusable buffer (e.g., in a tight loop) to avoid repeated heap allocations.
+    ///
+    /// The buffer is cleared before writing. If you need to preserve existing
+    /// data, copy it out before calling this method.
+    ///
+    /// # Capacity Requirements
+    ///
+    /// The buffer must have at least `payload.len() + 3` bytes of capacity.
+    /// This method will reserve additional capacity if needed.
+    ///
+    /// # Performance
+    ///
+    /// For maximum throughput, reuse the same `BytesMut` across multiple calls:
+    ///
+    /// ```rust
+    /// use hl7_mllp::MllpFrame;
+    /// use bytes::BytesMut;
+    ///
+    /// let mut buf = BytesMut::with_capacity(1024);
+    ///
+    /// // Reuse buffer for multiple messages
+    /// for i in 0..1000 {
+    ///     MllpFrame::encode_into(format!("MSG{}", i).as_bytes(), &mut buf);
+    ///     // send(&buf)...
+    ///     buf.clear(); // Reset for next iteration
+    /// }
+    /// ```
+    pub fn encode_into(payload: &[u8], buf: &mut BytesMut) {
+        buf.clear();
+        buf.reserve(payload.len() + 3);
         buf.put_u8(VT);
         buf.put_slice(payload);
         buf.put_u8(FS);
         buf.put_u8(CR);
-        buf.freeze()
     }
 
     /// Extract the HL7 payload from an MLLP-framed buffer.

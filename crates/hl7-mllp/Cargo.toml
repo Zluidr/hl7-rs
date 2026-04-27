@@ -25,3 +25,8 @@ async = ["dep:tokio", "std"]
 [dev-dependencies]
 tokio = { workspace = true, features = ["full"] }
 hl7-v2 = { path = "../hl7-v2" }
+criterion = { version = "0.5", default-features = false }
+
+[[bench]]
+name = "framing"
+harness = false
