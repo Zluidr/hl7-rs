@@ -93,6 +93,29 @@
 //!     println!("Received {} bytes", frame.len());
 //! }
 //! ```
+//!
+//! ## Feature Flags
+//!
+//! | Feature | Default | Description |
+//! |---------|---------|-------------|
+//! | `std` | **yes** | Enables `std`-only traits: `MllpTransport`, `AsyncMllpTransport`, and `std::error::Error` impl. |
+//! | `noncompliance` | no | Tolerates extra bytes before `VT` and missing final `CR`. |
+//! | `timestamps` | no | Adds `chrono`-based timestamps to ACK/NACK generation. Requires `std`. |
+//! | `async` | no | Enables `AsyncMllpTransport` trait. Requires `std` and `tokio`. |
+//!
+//! ### `no_std` Support
+//!
+//! Disable default features to build without `std`:
+//!
+//! ```toml
+//! [dependencies]
+//! hl7-mllp = { version = "0.1", default-features = false }
+//! ```
+//!
+//! **Important**: `no_std` mode still requires an allocator (`alloc` crate).
+//! `MllpError::InvalidFrame` carries an owned `String`, and `MllpFramer`
+//! uses `BytesMut` internally. If your target has no allocator, this crate
+//! is not suitable.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![forbid(unsafe_code)]
@@ -740,13 +763,18 @@ pub trait AsyncMllpTransport {
     /// This method should be cancellation-safe. If the future is dropped
     /// before completion, the transport should remain in a consistent state
     /// such that a subsequent call will continue from where it left off.
-    async fn read_frame(&mut self) -> Result<Vec<u8>, Self::Error>;
+    fn read_frame(
+        &mut self,
+    ) -> impl std::future::Future<Output = Result<Vec<u8>, Self::Error>> + Send;
 
     /// Write an MLLP-framed message to the transport.
     ///
     /// The frame should be a complete MLLP frame (including VT and FS+CR).
     /// Implementations must ensure the entire frame is written.
-    async fn write_frame(&mut self, frame: &[u8]) -> Result<(), Self::Error>;
+    fn write_frame(
+        &mut self,
+        frame: &[u8],
+    ) -> impl std::future::Future<Output = Result<(), Self::Error>> + Send;
 }
 
 #[cfg(test)]
