@@ -12,3 +12,7 @@ Cargo.lock
 *~
 .DS_Store
 .skill/
+
+# Claude Code / harness local state (session logs, locks, continuity tracking)
+.claude/
+.harness-mem/
