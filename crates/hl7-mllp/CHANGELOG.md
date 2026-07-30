@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-07-30
+
+### Added
+
+- **Async transport**: `AsyncMllpTransport` trait behind the `async` feature (tokio `io-util` + `net` only, no full runtime dependency)
+- **`no_std` support**: crate builds with `--no-default-features` (still requires `alloc` for `BytesMut`)
+- **`MllpFrame::encode_into(payload, buf)`**: zero-allocation encode variant writing into a caller-provided `BytesMut` (~38% faster than `encode`: 12 GiB/s vs 7.4 GiB/s)
+- **Criterion benchmarks**: `benches/framing.rs` covering encode/decode throughput
+
 ## [0.1.0] - 2026-04-12
 
 ### Added

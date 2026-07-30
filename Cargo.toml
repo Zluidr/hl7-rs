@@ -20,7 +20,7 @@ tokio      = { version = "1", features = ["full"] }
 rustls-webpki = "0.103.12"
 
 # Intra-workspace path references (used during local dev)
-hl7-mllp   = { path = "crates/hl7-mllp",   version = "0.0.1" }
+hl7-mllp   = { path = "crates/hl7-mllp",   version = "0.2.0" }
 hl7-v2     = { path = "crates/hl7-v2",     version = "0.0.1" }
 hl7-mindray = { path = "crates/hl7-mindray", version = "0.0.1" }
 fhir-r4    = { path = "crates/fhir-r4",    version = "0.0.1" }

@@ -125,6 +125,15 @@ Releases follow Semantic Versioning (SemVer). The release order is:
 4. `fhir-r4`
 5. `satusehat`
 
+Each crate's `TODO.md` tags its phases with a target version (e.g. `## Phase 2 — Async & Ecosystem `[0.2.0]``).
+When every checkbox in a phase is checked off, bump that crate's `Cargo.toml`
+`version` (and the matching entry in the workspace root `Cargo.toml`'s
+`[workspace.dependencies]`) and add a `CHANGELOG.md` entry for it **in the same
+PR that completes the phase** — don't let the TODO checklist and the published
+version drift apart. `scripts/check-version-todo-sync.sh` enforces this as a
+pre-commit hook and CI job; it fails if a crate's version is behind its highest
+fully-checked phase.
+
 ## Questions?
 
 Feel free to open an issue for discussion before starting work on significant changes.

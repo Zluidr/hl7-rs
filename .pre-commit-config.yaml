@@ -54,3 +54,10 @@ repos:
         language: system
         files: "(Cargo\\.toml|Cargo\\.lock|audit\\.toml)$"
         pass_filenames: false
+
+      - id: version-todo-sync
+        name: crate version matches completed TODO.md phase
+        entry: bash scripts/check-version-todo-sync.sh
+        language: system
+        files: "crates/.*/(TODO\\.md|Cargo\\.toml)$"
+        pass_filenames: false
