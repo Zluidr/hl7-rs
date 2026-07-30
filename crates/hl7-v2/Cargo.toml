@@ -9,3 +9,10 @@ repository = "https://github.com/Zluidr/hl7-rs"
 license = "Apache-2.0"
 keywords = ["hl7", "healthcare", "medical", "parser", "interoperability"]
 categories = ["encoding", "parser-implementations", "science"]
+
+[dev-dependencies]
+criterion = { version = "0.5", default-features = false }
+
+[[bench]]
+name = "parse"
+harness = false

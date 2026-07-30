@@ -81,3 +81,42 @@ jobs:
       - uses: taiki-e/install-action@cargo-deny
       - name: Run cargo-deny
         run: cargo deny check
+
+  benchmarks:
+    name: Benchmarks vs main
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    env:
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-bench-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Benchmark main (baseline)
+        run: |
+          git worktree add /tmp/main-baseline origin/main
+          cd /tmp/main-baseline
+          CARGO_TARGET_DIR="${{ github.workspace }}/target" cargo bench --workspace -- --save-baseline main
+
+      - name: Benchmark PR branch (compare against main)
+        run: cargo bench --workspace -- --baseline main
+
+      - name: Upload criterion report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: criterion-report
+          path: target/criterion
