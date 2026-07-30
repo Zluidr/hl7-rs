@@ -61,7 +61,7 @@ fn parse_fraction_micros(frac: &str) -> i64 {
 /// Days since 1970-01-01 for a proleptic-Gregorian civil date.
 /// Howard Hinnant's `days_from_civil` (public domain).
 fn days_from_civil(y: i32, m: u32, d: u32) -> Option<i64> {
-    if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
+    if !(1..=12).contains(&m) || d < 1 || d > days_in_month(y, m) {
         return None;
     }
     let y = if m <= 2 { y as i64 - 1 } else { y as i64 };
@@ -71,6 +71,20 @@ fn days_from_civil(y: i32, m: u32, d: u32) -> Option<i64> {
     let doy = (153 * mp + 2) / 5 + d as i64 - 1; // [0, 365]
     let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy; // [0, 146096]
     Some(era * 146097 + doe - 719468)
+}
+
+fn is_leap_year(y: i32) -> bool {
+    y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)
+}
+
+fn days_in_month(y: i32, m: u32) -> u32 {
+    match m {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if is_leap_year(y) => 29,
+        2 => 28,
+        _ => 0,
+    }
 }
 
 #[cfg(test)]
@@ -106,6 +120,14 @@ mod tests {
             parse_hl7_datetime("20240115103000+0700"),
             parse_hl7_datetime("20240115103000")
         );
+    }
+
+    #[test]
+    fn rejects_invalid_calendar_dates() {
+        assert_eq!(parse_hl7_datetime("20240230"), None); // Feb 30 never exists
+        assert_eq!(parse_hl7_datetime("20230229"), None); // 2023 isn't a leap year
+        assert_eq!(parse_hl7_datetime("20240229"), Some(1_709_164_800_000_000)); // 2024 is
+        assert_eq!(parse_hl7_datetime("20240431"), None); // April has 30 days
     }
 
     #[test]

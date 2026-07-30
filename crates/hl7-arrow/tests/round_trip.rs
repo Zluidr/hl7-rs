@@ -11,7 +11,7 @@ use arrow::array::{
 };
 use arrow::ipc::reader::StreamReader;
 use arrow::ipc::writer::StreamWriter;
-use hl7_arrow::encode_oru_r01;
+use hl7_arrow::{EncodeError, encode_oru_r01};
 use hl7_v2::Hl7Message;
 
 const FIXTURE: &str = include_str!("fixtures/oru_r01_sample.hl7");
@@ -219,4 +219,47 @@ fn oru_r01_round_trips_through_arrow_ipc() {
         .unwrap();
     assert!(value_numeric_2.is_null(0));
     assert!(value_numeric_2.is_null(1));
+}
+
+#[test]
+fn rejects_message_type_other_than_oru_r01() {
+    let text = String::from_utf8(fixture_bytes())
+        .unwrap()
+        .replace("ORU^R01", "ADT^A01");
+    let raw = text.into_bytes();
+    let message = Hl7Message::parse(&raw).expect("fixture parses");
+    assert_eq!(
+        encode_oru_r01(&message),
+        Err(EncodeError::UnsupportedMessageType("ADT^A01".to_string()))
+    );
+}
+
+#[test]
+fn treats_explicit_null_component_as_absent() {
+    let text = String::from_utf8(fixture_bytes())
+        .unwrap()
+        .replace("99MNDRY^SpotCheckVitals", "\"\"^SpotCheckVitals");
+    let raw = text.into_bytes();
+    let message = Hl7Message::parse(&raw).expect("fixture parses");
+    let batch = encode_oru_r01(&message).expect("fixture encodes");
+
+    let obr_list = batch
+        .column_by_name("obr")
+        .unwrap()
+        .as_any()
+        .downcast_ref::<ListArray>()
+        .unwrap();
+    let obr_struct = obr_list
+        .value(0)
+        .as_any()
+        .downcast_ref::<StructArray>()
+        .unwrap()
+        .clone();
+    let service_code = obr_struct
+        .column_by_name("universal_service_id_code")
+        .unwrap()
+        .as_any()
+        .downcast_ref::<StringArray>()
+        .unwrap();
+    assert!(service_code.is_null(0));
 }

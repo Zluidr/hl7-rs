@@ -23,6 +23,8 @@ pub enum EncodeError {
     MissingMsh,
     /// `MSH-10` (message control ID) is empty; the schema requires it.
     MissingMessageControlId,
+    /// `MSH-9` (message type) is not `ORU^R01`.
+    UnsupportedMessageType(String),
 }
 
 impl fmt::Display for EncodeError {
@@ -31,6 +33,9 @@ impl fmt::Display for EncodeError {
             EncodeError::MissingMsh => write!(f, "message has no MSH segment"),
             EncodeError::MissingMessageControlId => {
                 write!(f, "MSH-10 (message control ID) is required but empty")
+            }
+            EncodeError::UnsupportedMessageType(found) => {
+                write!(f, "expected MSH-9 message type ORU^R01, found {found:?}")
             }
         }
     }
@@ -65,16 +70,18 @@ struct ObrGroup {
 // converted to an owned `String` before that temporary drops, inside the
 // same closure that produced it (see hl7-v2's own note on this tradeoff).
 fn field_opt(seg: &Segment<'_>, index: usize) -> Option<String> {
-    seg.field(index).and_then(|f| {
-        let v = f.value();
-        (!v.is_empty()).then(|| v.to_string())
-    })
+    seg.field(index)
+        .filter(|f| !f.is_empty())
+        .map(|f| f.value().to_string())
 }
 
+// `Field::is_empty()` also treats HL7's explicit-null literal (`""`, two
+// quote characters) as empty, not just a zero-length string; components
+// aren't wrapped in a `Field`, so that same check is replicated here.
 fn component_opt(seg: &Segment<'_>, index: usize, component: usize) -> Option<String> {
     seg.field(index).and_then(|f| {
         let v = f.component(component)?;
-        (!v.is_empty()).then(|| v.to_string())
+        (!v.is_empty() && v != "\"\"").then(|| v.to_string())
     })
 }
 
@@ -229,6 +236,15 @@ fn build_obr_list_array(groups: &[ObrGroup]) -> ArrayRef {
 pub fn encode_oru_r01(message: &Hl7Message<'_>) -> Result<RecordBatch, EncodeError> {
     let msh = message.msh().ok_or(EncodeError::MissingMsh)?;
 
+    match message.message_type() {
+        Some("ORU^R01") => {}
+        other => {
+            return Err(EncodeError::UnsupportedMessageType(
+                other.unwrap_or_default().to_string(),
+            ));
+        }
+    }
+
     // MSH-1 is the field separator itself and isn't stored in
     // `Segment::field()`, so every other MSH-N sits one position back:
     // `field(N - 1)` == MSH-N.
@@ -237,7 +253,11 @@ pub fn encode_oru_r01(message: &Hl7Message<'_>) -> Result<RecordBatch, EncodeErr
     let receiving_application = field_opt(msh, 4);
     let receiving_facility = field_opt(msh, 5);
     let message_datetime = datetime_opt(msh, 6);
-    let message_control_id = field_opt(msh, 9).ok_or(EncodeError::MissingMessageControlId)?;
+    let message_control_id = message
+        .message_control_id()
+        .filter(|v| !v.is_empty() && *v != "\"\"")
+        .ok_or(EncodeError::MissingMessageControlId)?
+        .to_string();
 
     let (patient_id, patient_name, date_of_birth, sex) = match message.segment("PID") {
         Some(pid) => (
