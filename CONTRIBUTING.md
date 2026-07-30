@@ -28,7 +28,7 @@ cargo fmt --check
 
 ## Minimum Supported Rust Version (MSRV)
 
-This workspace requires Rust 1.75 or later. MSRV bumps are only done on major or minor releases, not patch releases.
+This workspace requires Rust 1.94 or later (edition 2024, which itself requires 1.85+). MSRV bumps are only done on major or minor releases, not patch releases. CI's `msrv` job reads the version to install from the workspace `Cargo.toml`'s `rust-version` field, so that file is the source of truth.
 
 ## Contribution Guidelines
 

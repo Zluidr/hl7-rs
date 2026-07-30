@@ -138,17 +138,17 @@ All of the following must hold before `hl7-arrow` v0.1.0 is considered released:
 - [x] Add `#![doc = include_str!("../README.md")]` to each crate's `lib.rs`
 
 ### T1.3 — Test coverage
-- [ ] Install `cargo-tarpaulin` (latest stable)
-- [ ] Establish coverage baseline per crate (target: ≥ 70% for 0.1.0) *(v0.1: `hl7-arrow` held to the same ≥ 70% bar)*
-- [ ] Add coverage report step to CI
-  - [ ] `cargo tarpaulin --workspace --out Xml`
-  - [ ] Upload to Codecov or similar
+- [x] Install `cargo-tarpaulin` (latest stable)
+- [x] Establish coverage baseline per crate (target: ≥ 70% for 0.1.0) *(v0.1: `hl7-arrow` held to the same ≥ 70% bar)*
+- [x] Add coverage report step to CI
+  - [x] `cargo tarpaulin --workspace --out Xml`
+  - [x] Upload to Codecov or similar
 
 ### T1.4 — MSRV
-- [ ] Validate MSRV `1.75` is accurate for each crate
-  - [ ] `cargo +1.75.0 check --workspace`
-  - [ ] *(v0.1)* Verify `arrow-rs` MSRV compatibility with `1.75` when `hl7-arrow` lands. If `arrow-rs` requires a newer MSRV, either bump the workspace MSRV (documenting rationale) or gate `hl7-arrow` behind a higher MSRV annotation in its own `Cargo.toml`.
-- [ ] Document MSRV policy in `CONTRIBUTING.md` (bump only on major/minor releases)
+- [x] Validate MSRV `1.94` is accurate for each crate *(workspace was bumped to `1.94` + edition 2024 in `962aec7`; `1.75` was stale)*
+  - [x] `cargo +1.94 check --workspace --all-features` — passes
+  - [x] *(v0.1)* Verify `arrow-rs` MSRV compatibility with `1.94` now that `hl7-arrow` has landed — `arrow v59.1.0` and its sub-crates check cleanly under `1.94`
+- [x] Document MSRV policy in `CONTRIBUTING.md` (bump only on major/minor releases)
 
 ---
 
