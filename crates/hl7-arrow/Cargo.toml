@@ -11,5 +11,8 @@ keywords = ["hl7", "arrow", "healthcare", "medical", "interoperability"]
 categories = ["encoding", "science"]
 
 [dependencies]
-arrow = { workspace = true }
+arrow = { workspace = true, features = ["ipc"] }
 hl7-v2 = { workspace = true }
+
+[dev-dependencies]
+hl7-mllp = { workspace = true }

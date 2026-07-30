@@ -41,17 +41,18 @@ Version targets follow [SemVer](https://semver.org). Phase gates map to crate ve
 - **Documentation:** Write `crates/hl7-arrow/README.md` with: schema-version matrix, per-message-type field table, nullability/repetition rules, and schema metadata conventions. This README is the consumer contract.
 
 #### HT-T10.2 — Emission examples
-- [ ] **Status:** TODO (unblocked — HT-T10 and HT-T10.1 are now DONE)
+- [x] **Status:** DONE (Jul 30, 2026) — both examples exist under `crates/hl7-arrow/examples/` and were run end-to-end on the `tests/fixtures/oru_r01_sample.hl7` fixture. Prerequisite schema/encode code (not yet written when this task was last logged) also landed: `oru_r01_schema()`/`obr_fields()`/`obx_fields()` (`crates/hl7-arrow/src/schema.rs`), `encode_oru_r01()` (`crates/hl7-arrow/src/encode.rs`), a dependency-free HL7 `TS` parser (`crates/hl7-arrow/src/datetime.rs`), the additive `Hl7Message::all_segments()` accessor in `hl7-v2`, and a Rust-only Arrow IPC round-trip test (`crates/hl7-arrow/tests/round_trip.rs`).
 - **Dependency:** HT-T10 (DONE), HT-T10.1 (DONE) — corrected from "HT-T10.1" only: these examples import the `hl7-arrow` crate directly (`crates/hl7-arrow/examples/*.rs`), so they also depend on HT-T10 (the crate existing), not just the HT-T10.1 design doc
 - **Notes:** Two examples under `crates/hl7-arrow/examples/`:
-  - **`mllp_listener.rs`** — TCP MLLP listener using `hl7-mllp` + `hl7-v2` + `hl7-arrow`; writes Arrow IPC stream to stdout. Intentionally minimal: single-connection, no reconnect logic, no graceful shutdown. Demonstration of the pattern, not production code.
+  - **`mllp_listener.rs`** — TCP MLLP listener using `hl7-mllp` + `hl7-v2` + `hl7-arrow`; writes Arrow IPC stream to stdout. Intentionally minimal: single-connection, no reconnect logic, no graceful shutdown, no ACK/NACK. Demonstration of the pattern, not production code.
   - **`pyarrow_consumer.py`** — Python companion reading the Arrow IPC stream from stdin. Uses `pyarrow` only. Demonstrates round-trip: Rust writes, Python reads, fields are typed correctly, nothing is lost in translation.
-- **Kill condition:** Both examples must run end-to-end on a fixture HL7 v2 message before the overall `hl7-arrow` v0.1 effort (HT-T10 + HT-T10.1 + HT-T10.2 + HT-T10.3, see the v0.1 kill-criteria list below) is considered complete. This does not gate HT-T10 itself, whose own DoD is narrower (crate scaffolding + correct dependencies only — see HT-T10's Status note above).
+- **Kill condition — MET:** Both examples run end-to-end on a fixture HL7 v2 message. Verified by building `mllp_listener`, sending the `oru_r01_sample.hl7` fixture over a real TCP socket MLLP-framed with VT/FS/CR delimiters, capturing its stdout, and reading it back with `pyarrow_consumer.py`: schema version `1.0.0`, message type `ORU^R01`, and all field values (both `OBR` groups, all four `OBX` rows, `NM`/`TS`/`ST` value-type branching) matched the source message with no data loss. `cargo build`/`clippy --all-targets --all-features -D warnings`/`fmt --check`/`test -p hl7-arrow` all clean (same two pre-existing, unrelated `workspace.edition`/`workspace.rust-version` warnings noted under HT-T10).
 
 #### HT-T10.3 — `hl7-arrow` crate metadata and publish readiness
-- [ ] **Status:** BLOCKED
+- [ ] **Status:** TODO (unblocked — HT-T10.2 is done)
 - **Dependency:** HT-T10.2
 - **Notes:** Same metadata bar as other crates per T1.1: `description`, `repository`, `license` = `Apache-2.0`, `keywords` (hl7, healthcare, arrow, ipc), `categories` (encoding, parser-implementations). `#![forbid(unsafe_code)]`. docs.rs render check. Confirm `arrow-rs` and transitive deps clear `deny.toml`.
+- **Partial progress (Jul 30, 2026):** the `arrow → ahash → tiny-keccak` `CC0-1.0` license flag (noted under HT-T10's own status above) is resolved — added a scoped `[[licenses.exceptions]]` entry in `deny.toml` for `tiny-keccak` only (not a blanket `CC0-1.0` allow), needed to get the local `cargo-deny` pre-commit hook green for the HT-T10.2 commit. `cargo deny check` now reports `licenses ok`. Remaining HT-T10.3 scope (crate metadata bar, `cargo publish --dry-run`, docs.rs check) still open.
 
 ### HT-T20 — Document cross-language Arrow pattern in README
 - [x] **Status:** DONE (Apr 19, 2026)

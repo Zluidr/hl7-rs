@@ -24,10 +24,14 @@ allow = [
 ]
 
 # Exceptions for specific crates if needed
-# [[licenses.exceptions]]
-# name = "crate_name_if_needed"
-# allow = ["LicenseRef-exception"]
-# reason = "Commercial license or specific justification"
+#
+# tiny-keccak: transitive dep of arrow-array (via ahash -> const-random),
+# pulled in by hl7-arrow (HT-T10). CC0-1.0 is a public-domain-equivalent
+# dedication, compatible with Apache-2.0; scoped to this one crate rather
+# than a blanket CC0-1.0 allow (HT-T10.3).
+[[licenses.exceptions]]
+name = "tiny-keccak"
+allow = ["CC0-1.0"]
 
 # Bans - duplicate dependency checking
 [bans]

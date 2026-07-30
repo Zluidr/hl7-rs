@@ -223,6 +223,19 @@ impl<'a> Hl7Message<'a> {
         self.segments.iter().filter(move |s| s.name == name)
     }
 
+    /// Iterate over every segment in original document order, regardless of
+    /// name.
+    ///
+    /// `segments(name)` filters to a single segment type, which loses the
+    /// interleaving needed to reconstruct hierarchical groupings — e.g.
+    /// HL7's ORDER_OBSERVATION structure, where each `OBR` is followed by
+    /// the `OBX` segments that belong to it. Consumers that need to
+    /// reassemble that structure should walk `all_segments()` and start a
+    /// new group each time an `OBR` is seen.
+    pub fn all_segments(&self) -> impl Iterator<Item = &Segment<'_>> {
+        self.segments.iter()
+    }
+
     /// Get the first segment with the given name.
     pub fn segment(&self, name: &str) -> Option<&Segment<'_>> {
         self.segments.iter().find(|s| s.name == name)
