@@ -2,7 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/hl7-mindray.svg)](https://crates.io/crates/hl7-mindray)
 [![Docs.rs](https://docs.rs/hl7-mindray/badge.svg)](https://docs.rs/hl7-mindray)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 
 **Mindray patient monitor HL7 field mappings.**
 
@@ -32,8 +32,8 @@ let raw = b"MSH|^~\\&|BeneVision|ICU1|EMR||20240101120000||ORU^R01|001|P|2.3.1\r
             OBX|2|NM|8867-4^HR^LN||72|/min|60-100|N|||F\r\
             OBX|3|NM|9279-1^RR^LN||16|/min|12-20|N|||F";
 
-let msg = Hl7Message::parse(raw)?;
-let oru = MindrayOru::from_message(&msg)?;
+let msg = Hl7Message::parse(raw).unwrap();
+let oru = MindrayOru::from_message(&msg).unwrap();
 
 println!("SpO2: {:?}%", oru.spo2());           // Some(98.0)
 println!("HR:   {:?} bpm", oru.heart_rate());  // Some(72.0)

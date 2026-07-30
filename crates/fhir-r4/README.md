@@ -2,7 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/fhir-r4.svg)](https://crates.io/crates/fhir-r4)
 [![Docs.rs](https://docs.rs/fhir-r4/badge.svg)](https://docs.rs/fhir-r4)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 
 **FHIR R4 resource types and builders — focused on device integration pipelines.**
 
@@ -32,7 +32,7 @@ let obs = ObservationBuilder::new()
     .effective_datetime("2024-01-01T12:00:00+08:00")
     .build();
 
-let json = serde_json::to_string_pretty(&obs)?;
+let json = serde_json::to_string_pretty(&obs).unwrap();
 // POST json to your FHIR server
 ```
 
@@ -43,7 +43,7 @@ let json = serde_json::to_string_pretty(&obs)?;
 fhir-r4 = { version = "0.0.1", features = ["satusehat"] }
 ```
 
-```rust
+```rust,ignore
 use fhir_r4::satusehat::SatuSehatObservation;
 // SATUSEHAT-specific profile fields and validation
 ```

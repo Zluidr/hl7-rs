@@ -1,36 +1,4 @@
-//! # hl7-mindray
-//!
-//! Mindray patient monitor HL7 field mappings.
-//!
-//! Mindray devices (BeneVision N-series, ePM series, iPM 9800) output HL7 v2
-//! `ORU^R01` messages using a mix of standard LOINC/MDC codes and Mindray's
-//! private `99MNDRY` code space. This crate maps both code spaces to a
-//! unified [`VitalSign`] enum for downstream use.
-//!
-//! ## Supported Devices
-//!
-//! - BeneVision N-series (N17, N15, N12) — PDS protocol, HL7 v2.3.1
-//! - ePM series (ePM 10/12/15) — direct HL7 LAN output
-//! - iPM 9800 — HL7 v2 over wired/wireless LAN
-//!
-//! ## Example
-//!
-//! ```rust
-//! use hl7_v2::Hl7Message;
-//! use hl7_mindray::MindrayOru;
-//!
-//! let raw = b"MSH|^~\\&|BeneVision|ICU1|EMR||20240101120000||ORU^R01|001|P|2.3.1\r\
-//!             OBX|1|NM|59408-5^SpO2^LN||98|%|95-100|N|||F\r\
-//!             OBX|2|NM|8867-4^HR^LN||72|/min|60-100|N|||F";
-//!
-//! let msg = Hl7Message::parse(raw).unwrap();
-//! let oru = MindrayOru::from_message(&msg).unwrap();
-//!
-//! for vital in oru.vitals() {
-//!     println!("{:?}", vital);
-//! }
-//! ```
-
+#![doc = include_str!("../README.md")]
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 

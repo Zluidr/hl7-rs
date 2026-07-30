@@ -1,8 +1,25 @@
 # hl7-arrow
 
-*(planned, v0.1 — this document is the schema design deliverable for HT-T10.1; no code exists yet, see [`TODO.md`](../../TODO.md) HT-T10 for crate scaffolding)*
-
 Apache Arrow RecordBatch emission for parsed HL7 v2 messages (`hl7-v2::Hl7Message`). One job: turn a typed HL7 v2 AST into columnar Arrow data. No opinion on transport (stdout, file, socket, Flight, shared memory — see root [`README.md`](../../README.md#cross-language-integration-via-apache-arrow-v01-planned)).
+
+This crate depends only on `hl7-v2` and `arrow` — no other intra-workspace crate — so it stays usable independently of transport (`hl7-mllp`), vendor mapping (`hl7-mindray`), or FHIR (`fhir-r4`/`satusehat`) concerns.
+
+## Usage
+
+```rust
+use hl7_arrow::encode_oru_r01;
+use hl7_v2::Hl7Message;
+
+let raw = b"MSH|^~\\&|SendApp|SendFac|RecApp|RecFac|20240115103000||ORU^R01|MSG00001|P|2.3.1\r\
+PID|1||P12345^^^MRN||Doe^Jane||19800615|F\r\
+OBR|1||ORD001|99MNDRY^SpotCheckVitals||20240115102000|20240115102000\r\
+OBX|1|NM|59408-5^SpO2^LN||97|%|95-100|N|||F\r";
+let message = Hl7Message::parse(raw).unwrap();
+let batch = encode_oru_r01(&message).unwrap();
+assert_eq!(batch.num_rows(), 1);
+```
+
+The rest of this document is the ORU^R01 schema reference: the column layout `encode_oru_r01` produces, kept as the schema's design record (HT-T10.1) alongside the implementation (HT-T10.2/HT-T10.3).
 
 ## Schema-version matrix
 

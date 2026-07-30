@@ -2,11 +2,11 @@
 
 [![Crates.io](https://img.shields.io/crates/v/satusehat.svg)](https://crates.io/crates/satusehat)
 [![Docs.rs](https://docs.rs/satusehat/badge.svg)](https://docs.rs/satusehat)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 
 **Indonesian SATUSEHAT national health platform — FHIR R4 profiles, API client, and data models.**
 
-Implements the [SATUSEHAT](https://satusehat.kemkes.go.id) FHIR R4 profiles and API specifications for Indonesia's national health interoperability platform.
+Implements the [SATUSEHAT](https://satusehat.kemkes.go.id) FHIR R4 profiles and API specifications for Indonesia's national health interoperability platform. Since Permenkes No. 24 Tahun 2022, all hospitals and health facilities in Indonesia are required to integrate their SIMRS with SATUSEHAT using HL7 FHIR R4.
 
 ---
 
@@ -17,6 +17,13 @@ Implements the [SATUSEHAT](https://satusehat.kemkes.go.id) FHIR R4 profiles and 
 - **Optional HTTP client** — `reqwest`-based client behind `client` feature flag
 - **Environment configs** — Sandbox, Staging, Production endpoints built-in
 
+## SATUSEHAT Environments
+
+| Environment | Base URL |
+|---|---|
+| Sandbox | `https://api-satusehat-stg.dto.kemkes.go.id` |
+| Production | `https://api-satusehat.kemkes.go.id` |
+
 ---
 
 ## Usage
@@ -26,7 +33,13 @@ use satusehat::{SatuSehatConfig, SatuSehatEnv};
 use satusehat::observation::SatuSehatObservation;
 use fhir_r4::observation::{ObservationBuilder, ObservationStatus};
 
-// Build a FHIR Observation
+let config = SatuSehatConfig {
+    env: SatuSehatEnv::Sandbox,
+    client_id: "your_client_id".to_string(),
+    client_secret: "your_client_secret".to_string(),
+    organization_id: "your_org_id".to_string(),
+};
+
 let obs = ObservationBuilder::new()
     .status(ObservationStatus::Final)
     .loinc_code("59408-5", "Oxygen saturation")
@@ -34,16 +47,9 @@ let obs = ObservationBuilder::new()
     .patient_reference("Patient/P001")
     .build();
 
-// Wrap with SATUSEHAT profile
-let config = SatuSehatConfig {
-    env: SatuSehatEnv::Sandbox,
-    client_id: std::env::var("SATUSEHAT_CLIENT_ID").unwrap(),
-    client_secret: std::env::var("SATUSEHAT_CLIENT_SECRET").unwrap(),
-    organization_id: std::env::var("SATUSEHAT_ORG_ID").unwrap(),
-};
-
 let ss_obs = SatuSehatObservation::from_observation(obs, &config);
-let json = serde_json::to_string_pretty(&ss_obs)?;
+let json = ss_obs.to_json().unwrap();
+// POST json to SATUSEHAT FHIR endpoint
 ```
 
 ### With HTTP client
@@ -53,7 +59,7 @@ let json = serde_json::to_string_pretty(&ss_obs)?;
 satusehat = { version = "0.0.1", features = ["client"] }
 ```
 
-```rust
+```rust,ignore
 use satusehat::client::SatuSehatClient;
 
 let client = SatuSehatClient::new(&config).await?;

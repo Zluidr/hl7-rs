@@ -2,7 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/hl7-mllp.svg)](https://crates.io/crates/hl7-mllp)
 [![Docs.rs](https://docs.rs/hl7-mllp/badge.svg)](https://docs.rs/hl7-mllp)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 
 **Transport-agnostic MLLP framing for HL7 v2 messages.**
 
@@ -23,7 +23,7 @@ Most existing Rust MLLP crates are tightly coupled to tokio. This crate is not.
 
 ## MLLP Frame Format
 
-```
+```text
 [VT 0x0B] [HL7 message bytes ...] [FS 0x1C] [CR 0x0D]
 ```
 
@@ -39,13 +39,13 @@ let payload = b"MSH|^~\\&|SendApp|SendFac|...";
 let framed = MllpFrame::encode(payload);
 
 // Decode an MLLP frame back to the raw HL7 payload
-let decoded = MllpFrame::decode(&framed)?;
+let decoded = MllpFrame::decode(&framed).unwrap();
 assert_eq!(decoded, payload);
 
 // Find frame boundaries in a streaming buffer
-if let Some(frame_len) = MllpFrame::find_frame_end(&buffer) {
-    let frame = &buffer[..frame_len];
-    let payload = MllpFrame::decode(frame)?;
+if let Some(frame_len) = MllpFrame::find_frame_end(&framed) {
+    let frame = &framed[..frame_len];
+    let payload = MllpFrame::decode(frame).unwrap();
     // process payload...
 }
 ```
@@ -74,6 +74,28 @@ impl MllpTransport for MyTcpTransport {
 
 ---
 
+## Feature Flags
+
+| Feature | Default | Description |
+|---------|---------|-------------|
+| `std` | **yes** | Enables `std`-only traits: `MllpTransport`, `AsyncMllpTransport`, and `std::error::Error` impl. |
+| `noncompliance` | no | Tolerates extra bytes before `VT` and missing final `CR`. |
+| `timestamps` | no | Adds `chrono`-based timestamps to ACK/NACK generation. Requires `std`. |
+| `async` | no | Enables `AsyncMllpTransport` trait. Requires `std` and `tokio`. |
+
+### `no_std` support
+
+Disable default features to build without `std`:
+
+```toml
+[dependencies]
+hl7-mllp = { version = "0.2", default-features = false }
+```
+
+**Important**: `no_std` mode still requires an allocator (`alloc` crate). `MllpError::InvalidFrame` carries an owned `String`, and `MllpFramer` uses `BytesMut` internally. If your target has no allocator, this crate is not suitable.
+
+---
+
 ## Ecosystem
 
 This crate is part of a family of transport-agnostic HL7 and FHIR crates:
@@ -90,12 +112,14 @@ This crate is part of a family of transport-agnostic HL7 and FHIR crates:
 
 ## Status
 
-`0.1.0` — Spec-complete MLLP implementation ([HL7 v2.5.1 Appendix C](https://hl7.org/implement/standards/product_brief.cfm?product_id=144)):
+`0.2.0` — Spec-complete MLLP implementation ([HL7 v2.5.1 Appendix C](https://hl7.org/implement/standards/product_brief.cfm?product_id=144)):
 
 - ✅ MLLP framing: encode/decode with VT/FS/CR delimiters
 - ✅ Streaming support: `MllpFramer` for incremental frame accumulation
 - ✅ ACK/NACK generation with optional `chrono` timestamps
 - ✅ `MllpTransport` trait for custom transports
+- ✅ `AsyncMllpTransport` trait behind the `async` feature (tokio `io-util`/`net` only)
+- ✅ `no_std` support (`--no-default-features`, still requires `alloc`)
 - ✅ Noncompliance feature for tolerant parsing
 - ✅ Comprehensive documentation and examples
 

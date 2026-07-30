@@ -1,38 +1,4 @@
-//! # hl7-v2
-//!
-//! Zero-dependency HL7 v2 message parser.
-//!
-//! Parses raw HL7 v2 byte input into a typed AST without coupling to any
-//! transport, runtime, or I/O library. Designed to be composed with
-//! [`hl7-mllp`](https://crates.io/crates/hl7-mllp) for network use, or
-//! used standalone for file/buffer parsing.
-//!
-//! ## Design
-//!
-//! - Zero dependencies — no alloc features required beyond `std`
-//! - [`Hl7Message`]: top-level parsed message
-//! - [`Segment`]: named segment (MSH, PID, OBR, OBX, ...)
-//! - [`Field`]: field within a segment, with component/repetition access
-//! - Strongly-typed accessors for common message types (ORU^R01, ADT^A01)
-//!
-//! ## Example
-//!
-//! ```rust
-//! use hl7_v2::Hl7Message;
-//!
-//! let raw = b"MSH|^~\\&|SendApp|SendFac|RecApp|RecFac|20240101120000||ORU^R01|12345|P|2.3.1\rOBX|1|NM|59408-5^SpO2^LN||98|%|95-100|N|||F";
-//!
-//! let msg = Hl7Message::parse(raw).unwrap();
-//!
-//! assert_eq!(msg.message_type(), Some("ORU^R01"));
-//!
-//! for obx in msg.segments("OBX") {
-//!     // Access field values via raw_fields() to avoid lifetime constraints
-//!     let value = obx.raw_fields().get(4).copied(); // OBX-5 (0-indexed from 0)
-//!     println!("OBX value: {:?}", value);
-//! }
-//! ```
-
+#![doc = include_str!("../README.md")]
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 

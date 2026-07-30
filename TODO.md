@@ -133,9 +133,9 @@ All of the following must hold before `hl7-arrow` v0.1.0 is considered released:
 - [x] Remove intra-workspace `path =` deps from individual crates before publish (use `version =` only) — `[workspace.dependencies]` already uses `path` + `version` pattern, which Cargo strips correctly on publish
 
 ### T1.2 — Documentation
-- [ ] `cargo doc --workspace --no-deps` — zero warnings *(v0.1: must include `hl7-arrow` once the crate exists)*
-- [ ] Verify all public items have doc comments
-- [ ] Add `#![doc = include_str!("../README.md")]` to each crate's `lib.rs`
+- [x] `cargo doc --workspace --no-deps` — zero warnings *(v0.1: must include `hl7-arrow` once the crate exists)*
+- [x] Verify all public items have doc comments
+- [x] Add `#![doc = include_str!("../README.md")]` to each crate's `lib.rs`
 
 ### T1.3 — Test coverage
 - [ ] Install `cargo-tarpaulin` (latest stable)
