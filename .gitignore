@@ -16,3 +16,6 @@ Cargo.lock
 # Claude Code / harness local state (session logs, locks, continuity tracking)
 .claude/
 .harness-mem/
+
+# Harness-generated report output (e.g. progress-snapshot.html)
+/out/
