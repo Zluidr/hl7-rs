@@ -1,6 +1,6 @@
 [package]
 name = "hl7-v2"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2024"
 rust-version = "1.94"
 description = "Zero-dependency HL7 v2 message parser — bytes to typed AST, no transport, no runtime"
