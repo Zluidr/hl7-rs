@@ -62,7 +62,7 @@ Source: generated from root [`TODO.md`](TODO.md) (cross-crate/workspace-level ta
 
 | Task | Description | DoD | Depends | Status |
 |------|------|-----|---------|--------|
-| T1.1 | Publish readiness for all crates | `cargo publish --dry-run -p <crate>` passes for every crate (incl. `hl7-arrow` once it exists); each has `description`/`repository`/`license`/`keywords`/`categories`; `README.md` renders on docs.rs with no broken relative links; no intra-workspace `path =` deps remain (use `version =` only) | Phase 0 | cc:todo |
+| T1.1 | Publish readiness for all crates | `cargo publish --dry-run -p <crate>` passes for every crate (incl. `hl7-arrow` once it exists); each has `description`/`repository`/`license`/`keywords`/`categories`; `README.md` renders on docs.rs with no broken relative links; no intra-workspace `path =` deps remain (use `version =` only) | Phase 0 | cc:done |
 | T1.2 | Documentation pass | `cargo doc --workspace --no-deps` zero warnings (incl. `hl7-arrow` once it exists); every public item has a doc comment; each crate's `lib.rs` includes `#![doc = include_str!("../README.md")]` | Phase 0 | cc:todo |
 | T1.3 | Test coverage baseline | `cargo-tarpaulin` installed and run per crate; each crate (incl. `hl7-arrow`) at ≥ 70% coverage; coverage step (`cargo tarpaulin --workspace --out Xml`) added to CI and uploaded to Codecov or similar | Phase 0 | cc:todo |
 | T1.4 | MSRV validation | `cargo +1.75.0 check --workspace` passes; `arrow-rs` MSRV compatibility with `1.75` verified once `hl7-arrow` lands (bump workspace MSRV with documented rationale, or pin a higher MSRV on `hl7-arrow` alone, if incompatible); MSRV bump policy (major/minor only) documented in `CONTRIBUTING.md` | Phase 0 | cc:todo |

@@ -125,10 +125,10 @@ All of the following must hold before `hl7-arrow` v0.1.0 is considered released:
 > *v0.1 addition:* `hl7-arrow` joins this phase as the sixth crate. Its own `crates/hl7-arrow/TODO.md` will be created under HT-T10.1.
 
 ### T1.1 — Publish readiness (all crates)
-- [ ] Verify `cargo publish --dry-run -p <crate>` passes for each crate *(v0.1: now includes `hl7-arrow` per HT-T10.3)*
-- [ ] Confirm all crates have `description`, `repository`, `license`, `keywords`, `categories`
-- [ ] Confirm `README.md` renders correctly on docs.rs (no broken relative links)
-- [ ] Remove intra-workspace `path =` deps from individual crates before publish (use `version =` only)
+- [x] Verify `cargo publish --dry-run -p <crate>` passes for each crate — passes for all 5 existing crates *(v0.1: `hl7-arrow` still pending per HT-T10.3, crate not yet created)*
+- [x] Confirm all crates have `description`, `repository`, `license`, `keywords`, `categories`
+- [x] Confirm `README.md` renders correctly on docs.rs (no broken relative links) — fixed broken `../CHANGELOG.md` link in `crates/hl7-mllp/README.md`
+- [x] Remove intra-workspace `path =` deps from individual crates before publish (use `version =` only) — `[workspace.dependencies]` already uses `path` + `version` pattern, which Cargo strips correctly on publish
 
 ### T1.2 — Documentation
 - [ ] `cargo doc --workspace --no-deps` — zero warnings *(v0.1: must include `hl7-arrow` once the crate exists)*
@@ -173,12 +173,12 @@ All of the following must hold before `hl7-arrow` v0.1.0 is considered released:
 - [ ] Run 10M iterations before each major release
 
 ### T2.3 — Benchmarks
-- [ ] Add `benches/` using `criterion` (latest stable)
-  - [ ] `bench_mllp_encode_decode` — throughput in MB/s
-  - [ ] `bench_hl7_parse` — messages/second for typical ORU^R01
-  - [ ] `bench_mindray_extract` — vitals extraction throughput
-  - [ ] *(v0.1)* `bench_hl7_arrow_encode` — messages/second end-to-end (parse + encode to RecordBatch); target ≥ 10,000 msg/s on commodity hardware for ORU^R01 (revisit target after first measurement)
-- [ ] Add benchmark CI job (compare against main branch)
+- [x] Add `benches/` using `criterion` (latest stable)
+  - [x] `bench_mllp_encode_decode` — throughput in MB/s (`crates/hl7-mllp/benches/framing.rs`, commit `d62c42b`)
+  - [x] `bench_hl7_parse` — messages/second for typical ORU^R01 (`crates/hl7-v2/benches/parse.rs`)
+  - [x] `bench_mindray_extract` — vitals extraction throughput (`crates/hl7-mindray/benches/extract.rs`)
+  - [ ] *(v0.1)* `bench_hl7_arrow_encode` — messages/second end-to-end (parse + encode to RecordBatch); target ≥ 10,000 msg/s on commodity hardware for ORU^R01 (revisit target after first measurement) — blocked on HT-T10
+- [x] Add benchmark CI job (compare against main branch) — `.github/workflows/ci.yml` `benchmarks` job
 
 ### T2.4 — SemVer compatibility checks
 - [ ] Add `cargo-semver-checks` to CI

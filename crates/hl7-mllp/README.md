@@ -99,7 +99,7 @@ This crate is part of a family of transport-agnostic HL7 and FHIR crates:
 - ✅ Noncompliance feature for tolerant parsing
 - ✅ Comprehensive documentation and examples
 
-See [CHANGELOG.md](../CHANGELOG.md) for details.
+See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## License
 
