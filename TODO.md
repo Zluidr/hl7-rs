@@ -155,16 +155,16 @@ All of the following must hold before `hl7-arrow` v0.1.0 is considered released:
 ## Phase 2 — Integration & Hardening `[0.x.0 → pre-1.0]`
 
 ### T2.1 — Integration test suite
-- [ ] Create `tests/` directory at workspace root
-- [ ] Write end-to-end test: Mindray HL7 bytes → FHIR R4 JSON → SATUSEHAT-compliant output
-  - [ ] Use real-world anonymized HL7 fixture files
-  - [ ] Cover: ePM series message format
-  - [ ] Cover: BeneVision N-series PDS format
-  - [ ] Cover: iPM 9800 format
-- [ ] *(v0.1)* Write end-to-end test: HL7 v2 bytes → `hl7-arrow` RecordBatch → deserialize → assert field equality (Rust-only round-trip; Python round-trip lives in `crates/hl7-arrow/examples/` per HT-T10.2, not in this CI)
-- [ ] Write negative test: malformed MLLP frame → graceful error propagation
-- [ ] Write negative test: unknown 99MNDRY codes → `VitalSign::Unknown` preserved
-- [ ] *(v0.1)* Write negative test: HL7 v2 with unexpected segment repetitions → Arrow RecordBatch uses `List<T>` correctly; no silent truncation
+- [x] Create `tests/` directory at workspace root *(required adding a root `[package]` — `hl7-rs-integration-tests`, `publish = false` — to `Cargo.toml`; a virtual workspace manifest has no target to attach a root-level `tests/` dir to)*
+- [x] Write end-to-end test: Mindray HL7 bytes → FHIR R4 JSON → SATUSEHAT-compliant output (`tests/mindray_to_satusehat.rs`)
+  - [x] Use HL7 fixture files *(synthetic, not sourced from real device captures — no anonymized real-world corpus exists in this repo; same approach as the pre-existing `crates/hl7-arrow/tests/fixtures/oru_r01_sample.hl7`)*
+  - [x] Cover: ePM series message format (`tests/fixtures/mindray_epm_series.hl7`)
+  - [x] Cover: BeneVision N-series PDS format (`tests/fixtures/mindray_benevision_n_series.hl7`)
+  - [x] Cover: iPM 9800 format (`tests/fixtures/mindray_ipm_9800.hl7`)
+- [x] *(v0.1)* Write end-to-end test: HL7 v2 bytes → `hl7-arrow` RecordBatch → deserialize → assert field equality — already satisfied by `crates/hl7-arrow/tests/round_trip.rs` (landed under HT-T10.2); not duplicated here
+- [x] Write negative test: malformed MLLP frame → graceful error propagation (`tests/negative_mllp_frames.rs`)
+- [x] Write negative test: unknown 99MNDRY codes → `VitalSign::Unknown` preserved (`tests/negative_unknown_vendor_code.rs`)
+- [x] *(v0.1)* Write negative test: HL7 v2 with unexpected segment repetitions → Arrow RecordBatch uses `List<T>` correctly; no silent truncation — already covered by `crates/hl7-arrow/tests/round_trip.rs` (`obr`/`obr.obx` as `List<Struct<...>>` with 2 repetitions); not duplicated here
 
 ### T2.2 — Fuzzing
 - [ ] Add `cargo-fuzz` targets (requires nightly, run separately from CI)

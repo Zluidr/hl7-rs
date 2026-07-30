@@ -1,3 +1,10 @@
+[package]
+name = "hl7-rs-integration-tests"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.94"
+publish = false
+
 [workspace]
 members = [
     "crates/hl7-mllp",
@@ -27,3 +34,11 @@ hl7-v2     = { path = "crates/hl7-v2",     version = "0.1.0" }
 hl7-mindray = { path = "crates/hl7-mindray", version = "0.0.1" }
 fhir-r4    = { path = "crates/fhir-r4",    version = "0.0.1" }
 satusehat  = { path = "crates/satusehat",  version = "0.0.1" }
+
+[dev-dependencies]
+hl7-mllp   = { workspace = true }
+hl7-v2     = { workspace = true }
+hl7-mindray = { workspace = true }
+fhir-r4    = { workspace = true }
+satusehat  = { workspace = true }
+serde_json = { workspace = true }
