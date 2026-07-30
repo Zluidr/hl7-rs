@@ -3,6 +3,7 @@ members = [
     "crates/hl7-mllp",
     "crates/hl7-v2",
     "crates/hl7-mindray",
+    "crates/hl7-arrow",
     "crates/fhir-r4",
     "crates/satusehat",
 ]

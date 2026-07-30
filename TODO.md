@@ -25,9 +25,9 @@ Version targets follow [SemVer](https://semver.org). Phase gates map to crate ve
 - **Notes:** Confirmed by inspection of `crates/*` tree and current README's Crates table. No code written.
 
 ### HT-T10 — Add `hl7-arrow` crate
-- [ ] **Status:** TODO (unblocked — HT-T10.1 is now DONE)
+- [x] **Status:** DONE (Jul 30, 2026) — `crates/hl7-arrow/` scaffolded (`Cargo.toml` + minimal `src/lib.rs`), added to workspace `members`; builds/lints/docs clean. `cargo deny check` flags a transitive `CC0-1.0` license (via `arrow → ahash → tiny-keccak`) — resolution deferred to HT-T10.3 per that task's own DoD, not a regression in this task's scope.
 - **Dependency:** HT-T01 (DONE), HT-T10.1 (DONE)
-- **Notes:** New crate `crates/hl7-arrow/`. Depends on `hl7-v2` (for the parsed AST) and `arrow-rs` (for RecordBatch emission). No new dependency on `hl7-mllp`, `hl7-mindray`, `fhir-r4`, or `satusehat` — those are orthogonal. Keep the crate thin; `arrow-rs` does the heavy lifting for encoding, columnar layout, and IPC framing.
+- **Notes:** New crate `crates/hl7-arrow/`. Depends on `hl7-v2` (for the parsed AST, via `{ workspace = true }`) and `arrow-rs` (`arrow = "59.1.0"`, `default-features = false`, for RecordBatch emission). No new dependency on `hl7-mllp`, `hl7-mindray`, `fhir-r4`, or `satusehat` — those are orthogonal. Kept the crate thin; `arrow-rs` does the heavy lifting for encoding, columnar layout, and IPC framing. No schema-emission code written yet — that's HT-T10.2.
 
 #### HT-T10.1 — Design Arrow schema for HL7 v2 messages
 - [x] **Status:** DONE (Jul 30, 2026) — `crates/hl7-arrow/README.md` published with the ORU^R01 schema
@@ -41,8 +41,8 @@ Version targets follow [SemVer](https://semver.org). Phase gates map to crate ve
 - **Documentation:** Write `crates/hl7-arrow/README.md` with: schema-version matrix, per-message-type field table, nullability/repetition rules, and schema metadata conventions. This README is the consumer contract.
 
 #### HT-T10.2 — Emission examples
-- [ ] **Status:** BLOCKED
-- **Dependency:** HT-T10.1
+- [ ] **Status:** TODO (unblocked — HT-T10 and HT-T10.1 are now DONE)
+- **Dependency:** HT-T10 (DONE), HT-T10.1 (DONE) — corrected from "HT-T10.1" only: these examples import the `hl7-arrow` crate directly (`crates/hl7-arrow/examples/*.rs`), so they also depend on HT-T10 (the crate existing), not just the HT-T10.1 design doc
 - **Notes:** Two examples under `crates/hl7-arrow/examples/`:
   - **`mllp_listener.rs`** — TCP MLLP listener using `hl7-mllp` + `hl7-v2` + `hl7-arrow`; writes Arrow IPC stream to stdout. Intentionally minimal: single-connection, no reconnect logic, no graceful shutdown. Demonstration of the pattern, not production code.
   - **`pyarrow_consumer.py`** — Python companion reading the Arrow IPC stream from stdin. Uses `pyarrow` only. Demonstrates round-trip: Rust writes, Python reads, fields are typed correctly, nothing is lost in translation.
