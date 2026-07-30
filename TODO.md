@@ -46,7 +46,7 @@ Version targets follow [SemVer](https://semver.org). Phase gates map to crate ve
 - **Notes:** Two examples under `crates/hl7-arrow/examples/`:
   - **`mllp_listener.rs`** — TCP MLLP listener using `hl7-mllp` + `hl7-v2` + `hl7-arrow`; writes Arrow IPC stream to stdout. Intentionally minimal: single-connection, no reconnect logic, no graceful shutdown. Demonstration of the pattern, not production code.
   - **`pyarrow_consumer.py`** — Python companion reading the Arrow IPC stream from stdin. Uses `pyarrow` only. Demonstrates round-trip: Rust writes, Python reads, fields are typed correctly, nothing is lost in translation.
-- **Kill condition:** Both examples must run end-to-end on a fixture HL7 v2 message before HT-T10 is considered complete.
+- **Kill condition:** Both examples must run end-to-end on a fixture HL7 v2 message before the overall `hl7-arrow` v0.1 effort (HT-T10 + HT-T10.1 + HT-T10.2 + HT-T10.3, see the v0.1 kill-criteria list below) is considered complete. This does not gate HT-T10 itself, whose own DoD is narrower (crate scaffolding + correct dependencies only — see HT-T10's Status note above).
 
 #### HT-T10.3 — `hl7-arrow` crate metadata and publish readiness
 - [ ] **Status:** BLOCKED

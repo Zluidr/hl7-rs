@@ -11,5 +11,5 @@ keywords = ["hl7", "arrow", "healthcare", "medical", "interoperability"]
 categories = ["encoding", "science"]
 
 [dependencies]
-arrow = { version = "59.1.0", default-features = false }
+arrow = { workspace = true }
 hl7-v2 = { workspace = true }
