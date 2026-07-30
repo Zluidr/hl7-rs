@@ -838,6 +838,19 @@ mod tests {
         assert_eq!(MllpFrame::decode(bad), Err(MllpError::MissingEndSequence));
     }
 
+    #[cfg(not(feature = "noncompliance"))]
+    #[test]
+    fn strict_mode_rejects_missing_cr() {
+        // Without the noncompliance feature, a frame missing its trailing
+        // CR (VT + payload + FS, no CR) is rejected as MissingEndSequence.
+        let payload = b"MSH|test";
+        let incomplete = [&[VT][..], payload, &[FS]].concat();
+        assert_eq!(
+            MllpFrame::decode(&incomplete),
+            Err(MllpError::MissingEndSequence)
+        );
+    }
+
     #[test]
     fn find_frame_end_complete() {
         let payload = b"MSH|test";
@@ -964,17 +977,6 @@ mod tests {
                 frames.is_empty(),
                 "Empty payload should be rejected even with noncompliance"
             );
-        }
-
-        #[test]
-        fn strict_mode_rejects_missing_cr() {
-            // Without noncompliance feature, missing CR should result in no frames found
-            // This test is compiled only without the feature
-            let payload = b"MSH|test";
-            let incomplete = [&[VT][..], payload, &[FS]].concat();
-
-            // In strict mode, this should not find a complete frame
-            // (But we can't test this here since it's cfg-gated)
         }
     }
 
@@ -1245,7 +1247,7 @@ mod tests {
     fn framer_push_pop_streaming() {
         // Test push/pop streaming pattern
         let mut framer = MllpFramer::new();
-        let frames = vec![
+        let frames = [
             MllpFrame::encode(b"MSH|msg1"),
             MllpFrame::encode(b"MSH|msg2"),
             MllpFrame::encode(b"MSH|msg3"),
