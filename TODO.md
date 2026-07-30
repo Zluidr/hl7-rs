@@ -25,13 +25,13 @@ Version targets follow [SemVer](https://semver.org). Phase gates map to crate ve
 - **Notes:** Confirmed by inspection of `crates/*` tree and current README's Crates table. No code written.
 
 ### HT-T10 — Add `hl7-arrow` crate
-- [ ] **Status:** BLOCKED (on HT-T10.1 schema design)
-- **Dependency:** HT-T01 (DONE)
+- [ ] **Status:** TODO (unblocked — HT-T10.1 is now DONE)
+- **Dependency:** HT-T01 (DONE), HT-T10.1 (DONE)
 - **Notes:** New crate `crates/hl7-arrow/`. Depends on `hl7-v2` (for the parsed AST) and `arrow-rs` (for RecordBatch emission). No new dependency on `hl7-mllp`, `hl7-mindray`, `fhir-r4`, or `satusehat` — those are orthogonal. Keep the crate thin; `arrow-rs` does the heavy lifting for encoding, columnar layout, and IPC framing.
 
 #### HT-T10.1 — Design Arrow schema for HL7 v2 messages
-- [ ] **Status:** TODO
-- **Dependency:** HT-T10
+- [x] **Status:** DONE (Jul 30, 2026) — `crates/hl7-arrow/README.md` published with the ORU^R01 schema
+- **Dependency:** HT-T01 (DONE) — corrected from "HT-T10": HT-T10 above states it is itself blocked on this task, so the reverse dependency was a transcription error
 - **Notes:** One RecordBatch schema per message type (ADT, ORM, ORU, MDM, etc.). Schema design decisions:
   - **Type fidelity**: HL7 v2 is string-typed on the wire, but segments have implicit types (TS = timestamp, NM = numeric, etc.). Arrow schema surfaces these as proper `Timestamp`, `Float64`, `Utf8` etc.
   - **Nullability**: HL7 fields are often optional and/or repeat. Arrow `List<T>` for repeating fields; nullable columns for optional fields.
