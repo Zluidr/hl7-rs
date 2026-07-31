@@ -28,19 +28,12 @@ fn rejects_frame_missing_end_sequence() {
 #[test]
 fn rejects_truncated_frame_as_incomplete() {
     // Shorter than the minimum possible frame (VT + 1 byte + FS + CR).
+    // This is also the shortest buffer that could otherwise represent an
+    // empty payload (VT immediately followed by FS+CR); the `buf.len() < 4`
+    // guard fires first, so `MllpError::EmptyPayload` is unreachable via
+    // `MllpFrame::decode` as currently implemented. Discovered while writing
+    // this test (T2.1); out of scope to fix here, see Plans.md version log.
     let frame = vec![0x0b, 0x1c, 0x0d];
 
-    assert_eq!(MllpFrame::decode(&frame), Err(MllpError::Incomplete));
-}
-
-#[test]
-fn rejects_empty_payload_between_delimiters() {
-    // NOTE: `MllpError::EmptyPayload` is unreachable via `MllpFrame::decode`
-    // as currently implemented — the `buf.len() < 4` guard always fires
-    // before a genuinely empty payload slice (VT immediately followed by
-    // FS+CR, i.e. a 3-byte buffer) can reach the `payload.is_empty()` check.
-    // Discovered while writing this test (T2.1); out of scope to fix here,
-    // see Plans.md version log.
-    let frame = vec![0x0b, 0x1c, 0x0d];
     assert_eq!(MllpFrame::decode(&frame), Err(MllpError::Incomplete));
 }

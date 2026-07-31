@@ -14,6 +14,19 @@ members = [
     "crates/fhir-r4",
     "crates/satusehat",
 ]
+# Adding the root [package] above makes cargo default to just that package
+# for bare `cargo build`/`cargo test` (no --workspace flag); restore the
+# whole-workspace default so out-of-habit invocations don't silently skip
+# every other crate's tests.
+default-members = [
+    ".",
+    "crates/hl7-mllp",
+    "crates/hl7-v2",
+    "crates/hl7-mindray",
+    "crates/hl7-arrow",
+    "crates/fhir-r4",
+    "crates/satusehat",
+]
 resolver = "2"
 edition = "2024"
 rust-version = "1.94"
